@@ -1,0 +1,24 @@
+{
+  "name": "slidespace",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.27.0",
+    "@babylonjs/gui": "^8.27.0",
+    "@babylonjs/loaders": "^8.27.0",
+    "@babylonjs/materials": "^8.25.0",
+    "@babylonjs/procedural-textures": "^8.27.0",
+    "vite": "^7.1.3"
+  },
+  "description": "A browser-based spatial presentation editor with 3D slides, Gaussian splatting and Babylon.js."
+}

@@ -1,0 +1,31 @@
+# Installed dependencies and generated output
+node_modules/
+dist/
+coverage/
+.vite/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Editor and OS state
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Private projects and large user-managed content
+project.json
+projects-local/
+private-assets/
+skybox/
+sound/
+assets/
+*.zip
+
+# Explicitly keep distributable application files in public/
+!public/favicon.ico

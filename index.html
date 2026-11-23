@@ -1,0 +1,1875 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta charset="UTF-8" />
+    <script src="/themeBoot.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <title>SlideSpace</title>
+    <script defer src="/src/main.js" type="module"></script>
+  <script type="module" src="/src/workspace.js"></script></head>
+  <body>
+    <div class="editor-app">
+
+      <header class="editor-toolbar ui1a-toolbar">
+<div class="workspace-brand"><span aria-hidden="true" class="workspace-brand-icon">S</span><span>SlideSpace<small data-i18n="SPATIAL PRESENTATION EDITOR">SPATIAL PRESENTATION EDITOR</small></span></div>
+<div aria-label="Project files" class="toolbar-group ui1a-file-tools" role="group">
+<button class="project-button" data-i18n="プロジェクトを開く" data-i18n-title="プロジェクトを開く" id="toolbarOpenProjectButton" title="プロジェクトを開く" type="button">開く</button>
+<button class="project-button" data-i18n="保存" id="saveProjectButton">保存</button>
+</div>
+<div aria-label="Slide navigation" data-i18n-aria-label="Slide navigation" class="toolbar-group toolbar-slide-controls" role="group">
+<button class="slide-button" data-i18n="前" id="previousSlideButton">前</button>
+<button class="slide-button" id="currentSlideButton"><span data-i18n="Page:" data-i18n-space="after">Page: </span><span id="currentSlidePage">0</span></button>
+<button class="slide-button" data-i18n="次" id="nextSlideButton">次</button>
+</div>
+<div class="toolbar-group ui1a-presentation-tools">
+<button class="slide-button presentation-start-button" data-i18n="▶ Present" id="presentButton">▶ Present</button>
+</div>
+<div class="toolbar-group drawing7f-quicktools" role="group" aria-label="描画と視点操作" data-i18n-aria-label="Drawing and camera controls">
+<button id="toolbarCameraToggle" type="button" class="slide-button drawing7f-mode-button" aria-label="視点操作" data-i18n-aria-label="視点操作" title="視点操作" data-i18n-title="視点操作" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><path d="m9 5 3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg></button>
+<button id="toolbarDrawingToggle" type="button" class="slide-button drawing7f-mode-button" aria-label="お絵描き" data-i18n-aria-label="お絵描き" title="お絵描き" data-i18n-title="お絵描き" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4M4 20l4.5-1 11-11a2.8 2.8 0 0 0-4-4l-11 11L4 20Z"/><path d="M4 20h6"/></svg></button>
+</div>
+<div aria-label="History" data-i18n-aria-label="History" class="toolbar-group ui1a-history-tools" role="group">
+<button class="slide-button" data-i18n="Undo" id="undoEditorButton">Undo</button>
+<button class="slide-button" data-i18n="Redo" id="redoEditorButton">Redo</button>
+</div>
+<div aria-label="カードの開閉" class="toolbar-group toolbar-fold-controls" data-i18n-aria-label="カードの開閉" role="group">
+<button aria-label="すべて開く" class="slide-button" data-i18n-aria-label="すべて開く" data-i18n-title="すべて開く" id="toolbarExpandCards" title="すべて開く" type="button">⊞</button>
+<button aria-label="すべて閉じる" class="slide-button" data-i18n-aria-label="すべて閉じる" data-i18n-title="すべて閉じる" id="toolbarCollapseCards" title="すべて閉じる" type="button">⊟</button>
+</div>
+<details class="ui1a-more-tools"><summary aria-label="その他の操作" data-i18n-aria-label="その他の操作" title="その他の操作" data-i18n-title="その他の操作">⋯</summary>
+<div class="ui1a-more-content">
+<button class="slide-button" data-i18n="Copy" id="copySlideButton">Copy</button>
+<button class="slide-button" data-i18n="Paste" id="pasteSlideButton">Paste</button>
+<button class="slide-button" id="fullscreenButton"><span data-i18n="全画面" data-i18n-space="after">全画面 </span><span data-i18n="開始" id="fullscreenStatus">開始</span></button>
+<button class="workspace-theme-shortcut" data-i18n="◐ Appearance" data-workspace-link="project" data-workspace-scroll-to="workspaceAppearanceSettings" type="button">◐ Appearance</button><button class="workspace-theme-shortcut" data-i18n="🌐 Language" data-workspace-link="project" data-workspace-scroll-to="workspaceAppearanceSettings" type="button">🌐 Language</button>
+</div>
+</details>
+<div class="toolbar-group ui1a-project-status">
+<span class="project-status-label" data-i18n="Project:" data-i18n-space="after">Project: </span>
+<span id="currentProjectName">編集モード</span>
+<span aria-live="polite" id="projectSaveState" role="status">未保存</span>
+<span id="projectSlideCount">0 slides</span>
+<span id="projectLoadStatus" role="status"></span>
+<div class="datetime-container compact"><span id="datetime"></span></div>
+</div>
+</header>
+      
+      <main class="editor-main">
+        <aside id="projectPanel" class="editor-panel editor-project-panel">
+          <div class="editor-panel-header">
+            <div class="editor-panel-rail-label" aria-hidden="true">Workspace</div>
+            <div class="editor-panel-title-row">
+              <div class="editor-panel-title" data-i18n="WORKSPACE">WORKSPACE</div>
+              <button id="projectPanelCollapseButton" class="editor-panel-collapse-button" type="button" title="Collapse Project Panel" aria-label="Collapse Project Panel" data-i18n-title="Collapse Project Panel" data-i18n-aria-label="Collapse Project Panel">
+                ◀
+              </button>
+            </div>
+            <div class="editor-panel-context">
+              <div
+                id="projectPanelProjectName"
+                class="editor-panel-context-primary"
+              >
+                No Project
+              </div>
+              <div class="editor-panel-context-row">
+                <span class="editor-panel-context-label" data-i18n="Editing" data-i18n-space="after"> Editing </span>
+                <span
+                  id="projectPanelEditingPreset"
+                  class="editor-panel-context-value"
+                >
+                  Scene Preset: —
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="editor-panel-content"><nav class="workspace-navigation" role="tablist" aria-label="編集カテゴリ" aria-orientation="vertical" data-i18n-aria-label="編集カテゴリ"><button type="button" id="workspace-tab-slides" role="tab" aria-controls="workspace-slides" aria-selected="true" tabindex="0" data-workspace-tab="slides"><span class="workspace-nav-number" aria-hidden="true">01</span><span><span data-i18n="Slides">Slides</span><small data-i18n="スライドの内容・選択・再生設定">スライドの内容・選択・再生設定</small></span></button><button type="button" id="workspace-tab-scene" role="tab" aria-controls="workspace-scene" aria-selected="false" tabindex="-1" data-workspace-tab="scene"><span class="workspace-nav-number" aria-hidden="true">02</span><span><span data-i18n="Scene &amp; Assets">Scene &amp; Assets</span><small data-i18n="シーンプリセット・空・素材">シーンプリセット・空・素材</small></span></button><button type="button" id="workspace-tab-transform" role="tab" aria-controls="workspace-transform" aria-selected="false" tabindex="-1" data-workspace-tab="transform"><span class="workspace-nav-number" aria-hidden="true">03</span><span><span data-i18n="Transform">Transform</span><small data-i18n="位置・回転・スケール・Gizmo">位置・回転・スケール・Gizmo</small></span></button><button type="button" id="workspace-tab-camera" role="tab" aria-controls="workspace-camera" aria-selected="false" tabindex="-1" data-workspace-tab="camera"><span class="workspace-nav-number" aria-hidden="true">04</span><span><span data-i18n="Camera">Camera</span><small data-i18n="視点・感度・操作設定">視点・感度・操作設定</small></span></button><button type="button" id="workspace-tab-drawing" role="tab" aria-controls="workspace-drawing" aria-selected="false" tabindex="-1" data-workspace-tab="drawing"><span class="workspace-nav-number" aria-hidden="true">05</span><span><span data-i18n="Drawing">Drawing</span><small data-i18n="発表に使う描画の設定">発表に使う描画の設定</small></span></button><button type="button" id="workspace-tab-presentation" role="tab" aria-controls="workspace-presentation" aria-selected="false" tabindex="-1" data-workspace-tab="presentation"><span class="workspace-nav-number" aria-hidden="true">06</span><span><span data-i18n="Presentation">Presentation</span><small data-i18n="発表時の動作">発表時の動作</small></span></button><button type="button" id="workspace-tab-project" role="tab" aria-controls="workspace-project" aria-selected="false" tabindex="-1" data-workspace-tab="project"><span class="workspace-nav-number" aria-hidden="true">07</span><span><span data-i18n="Project">Project</span><small data-i18n="ファイル・外観・プロジェクト情報">ファイル・外観・プロジェクト情報</small></span></button></nav><div class="workspace-nav-footer"><span>SLIDESPACE</span><p data-i18n="スライドを選択して、カテゴリから設定を編集します。">スライドを選択して、カテゴリから設定を編集します。</p></div></div>
+        </aside>
+        <div id="projectPanelResizer" class="editor-panel-resizer editor-panel-resizer-left" role="separator" aria-label="Resize project panel" aria-orientation="vertical" data-i18n-aria-label="Resize project panel"></div>
+        <section class="editor-viewport">
+          <div class="canvas-container">
+            <canvas id="standardDrawingCanvas"></canvas>
+            <canvas id="neonDrawingCanvas"></canvas>
+            <canvas id="webglCanvas"></canvas>
+          </div>
+        </section>
+        <div id="slidePanelResizer" class="editor-panel-resizer editor-panel-resizer-right" role="separator" aria-label="Resize slide panel" aria-orientation="vertical" data-i18n-aria-label="Resize slide panel"></div>
+        <aside
+          id="slidePanel"
+          class="editor-panel editor-slide-panel editor-inspector"
+        >
+
+          <div class="editor-panel-header">
+            <div class="editor-panel-rail-label" aria-hidden="true">Inspector</div>
+            <div class="editor-panel-title-row">
+              <div class="editor-panel-title" data-i18n="INSPECTOR">INSPECTOR</div>
+              <button id="slidePanelCollapseButton" class="editor-panel-collapse-button" type="button" title="Collapse Slide Panel" aria-label="Collapse Slide Panel" data-i18n-title="Collapse Slide Panel" data-i18n-aria-label="Collapse Slide Panel">
+                ▶
+              </button>
+            </div>
+            <div class="editor-panel-context">
+              <div id="slidePanelCurrentContext" class="editor-context-primary">Current Slide: なし</div><div class="editor-context-secondary" role="status"><span data-i18n="Scene Preset">Scene Preset</span>: <strong id="inspectorScenePresetName">—</strong></div>
+              <div
+                id="slidePanelSelectionContext"
+                class="editor-context-secondary"
+              >Selection: 0枚</div>
+            </div>
+          </div>
+          <div class="editor-panel-content editor-slide-panel-content"><section id="workspace-slides" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-slides" data-workspace-panel="slides"><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 01</span><h1 data-i18n="Slides">Slides</h1><p data-i18n="スライドの内容・選択・再生設定">スライドの内容・選択・再生設定</p><div class="workspace-panel-actions" role="group" aria-label="このパネルの項目を開閉" data-i18n-aria-label="このパネルの項目を開閉"><button id="multiExpandAllSectionsButton" class="small-button" data-i18n="Expand All">
+                Expand All
+              </button><button id="multiCollapseAllSectionsButton" class="small-button" data-i18n="Collapse All">
+                Collapse All
+              </button></div></div><details class="inspector-section" open><summary data-i18n="Add Slide">Add Slide</summary><div class="inspector-section-content"><button id="addBlankSlideButton" type="button" class="primary-action" data-i18n="＋ スライドを新規追加">＋ スライドを新規追加</button> <button id="addTransparentSlideButton" type="button" class="slide-button" data-i18n="Add transparent slide">Add transparent slide</button><p class="workspace-hint" data-i18n="変形のカメラ距離を使って、指定位置に空白スライドを追加します。Undo / Redoに対応します。">変形のカメラ距離を使って、指定位置に空白スライドを追加します。Undo / Redoに対応します。</p><div class="ui1c-slide-placement"><label for="slideInsertPlacementSelect" data-i18n="挿入位置">挿入位置</label><select id="slideInsertPlacementSelect" aria-label="挿入位置" data-i18n-aria-label="挿入位置"><option value="end" data-i18n="末尾に追加">末尾に追加</option><option value="before" data-i18n="Currentの前に挿入">Currentの前に挿入</option><option value="after" data-i18n="Currentの後に挿入">Currentの後に挿入</option></select></div></div></details><div id="currentSlideInspector">
+              <div class="inspector-section">
+                <details class="inspector-section" open>
+                  <summary data-i18n="Current Slide">Current Slide</summary>
+                  <div class="inspector-section-content">
+                  <div class="slide-metadata-grid">
+                          <div class="inspector-row">
+                            <span data-i18n="Order">Order</span>
+                            <span id="slideOrderDisplay">-</span>
+                          </div>
+                          <div class="inspector-row">
+                            <span>ID</span>
+                            <span id="slideIdDisplay">-</span>
+                          </div>
+                          <div class="inspector-row">
+                            <label for="slideLabelInput" data-i18n="Label"> Label </label>
+                            <input id="slideLabelInput" type="text" placeholder="Slide label" data-i18n-placeholder="Slide label">
+                          </div>
+                          <div class="inspector-row">
+                            <span data-i18n="File">File</span>
+                            <span
+                              id="slideFilenameDisplay"
+                              class="slide-filename-display"
+                            >
+                              -
+                            </span>
+                          </div>
+                          <div class="inspector-row">
+                            <label for="slideImageIdInput" data-i18n="Image ID"> Image ID </label>
+                            <input
+                              id="slideImageIdInput"
+                              type="number"
+                              min="0"
+                              step="1"
+                            />
+                            <button id="applySlideImageIdButton" data-i18n="画像変更">
+                              画像変更
+                            </button>
+                            <input id="slideImageFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="Choose slide image" data-i18n-aria-label="Choose slide image" />
+                          </div>
+                        </div>
+                    <label class="slide-transparent-setting"><input id="slideTransparentPresentationCheckbox" type="checkbox"><span data-i18n="Transparent in presentation">Transparent in presentation</span></label><p class="workspace-hint" data-i18n="Transparent slide help">Hide only the slide plane during presentation; keep its camera, scene, objects and interactions.</p>
+                    <div class="scene4b-current-slide-actions">
+                      <button id="chooseSlideImageButton" type="button" class="slide-button" data-i18n="Choose slide image…">Choose slide image…</button>
+                      <button id="recordSlideButton" class="slide-button" type="button" title="Currentスライドだけを選択し、カメラ前に移動" data-i18n="Currentをカメラ前へ移動" data-i18n-title="Currentスライドだけを選択し、カメラ前に移動">Currentをカメラ前へ移動</button>
+                      <button id="openSlideGizmoButton" class="slide-button workspace-link" type="button" data-workspace-link="transform" data-transform-target="slide" data-i18n="Slide Gizmoを編集 →">Slide Gizmoを編集 →</button>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div><div id="slideSelectionInspector"><details class="inspector-section selection-summary" open><summary data-i18n="Selection &amp; Operations">Selection &amp; Operations</summary><div class="inspector-section-content"><p id="slideSelectionSummary" role="status" aria-live="polite">スライドはありません。</p><span id="toolbarCurrentSlideStatus" class="legacy-context-status" aria-hidden="true"> Current: - </span><span id="slideSelectionStatus" class="legacy-context-status" aria-hidden="true"> Selected: 0 </span><span id="currentSlidePositionLabel" class="legacy-context-status" aria-hidden="true"> 0 / 0 </span><div id="slideInspectorTitle" class="legacy-context-status" aria-hidden="true">Slide</div><div id="multiCurrentSlideInfo"></div><div id="multiSlideInspectorSelectionCount" class="legacy-context-status" aria-hidden="true">
+                  0 Slides Selected
+                </div><div
+                  id="slideOperationTargetHint"
+                  class="slide-operation-target-hint"
+                ></div><div id="multiSelectedSlideList"></div><span id="slideSettingsTargetLabel" class="legacy-context-status" aria-hidden="true"></span><h2 class="card-subheading" data-i18n="Operations">Operations</h2>
+                  <div class="multi-slide-button-grid">
+                    <button id="moveSlideEarlierButton" class="slide-button" data-i18n="◀ Earlier">
+                      ◀ Earlier
+                    </button>
+                    <button id="moveSlideLaterButton" class="slide-button" data-i18n="Later ▶">
+                      Later ▶
+                    </button>
+                    <button id="duplicateSlideButton" class="slide-button" data-i18n="Duplicate">
+                      Duplicate
+                    </button>
+                    <button id="deleteSlideButton" class="slide-button danger-button" data-i18n="Delete">
+                      Delete
+                    </button>
+                  </div>
+                <details class="ui1b-advanced-actions"><summary data-i18n="Reorder">Reorder</summary>
+                <div class="multi-slide-button-grid">
+                  <button id="multiGatherButton" data-i18n="Gather Selected">Gather Selected</button>
+                  <button id="multiMoveToStartButton" data-i18n="⇤ Move to Start">⇤ Move to Start</button>
+                  <button id="multiMoveToEndButton" data-i18n="Move to End ⇥">Move to End ⇥</button>
+                </div></details>
+              </div></details>
+              <div class="multi-slide-inspector-header">
+                
+                
+                
+              </div>
+              
+              
+            </div><details class="inspector-section workspace-foldable" open><summary data-i18n="Presets">Presets</summary><div class="inspector-section-content">
+                <div class="batch-preset-row">
+                  <label for="multiScenePresetSelect" data-i18n="Scene"> Scene </label>
+                  <select id="multiScenePresetSelect"></select>
+                </div>
+              </div></details><div id="sharedSlideSettings">
+              
+              
+
+              
+              <div
+                id="multiEnvironmentSection"
+                class="multi-slide-collapsible-section"
+                data-section="environment"
+              >
+                <div class="multi-slide-section-header">
+                  <button
+                    id="multiEnvironmentSectionToggle"
+                    class="multi-section-toggle"
+                    type="button"
+                    aria-expanded="true"
+                  >
+                    <span id="multiEnvironmentSectionChevron" class="multi-section-chevron" aria-hidden="true">
+                      ▾
+                    </span>
+                    <span class="multi-slide-inspector-section-title" data-i18n="Environment Override" data-i18n-space="after">
+                      Environment Override
+                    </span>
+                  </button>
+                </div>
+                <div
+                  id="multiEnvironmentSectionBody"
+                  class="multi-slide-section-body"
+                >
+                  <div class="inspector-row scene1c-override-switch">
+                    <label for="slideEnvironmentOverrideEnabled"><input id="slideEnvironmentOverrideEnabled" type="checkbox" /><span data-i18n="Use Slide Override">Use Slide Override</span></label>
+                  </div>
+                  <p class="environment-override-hint" data-i18n="Environment override note">Off: use the Scene environment. On: use slide-specific environment values.</p>
+                  <details id="slideEnvironmentCustomDetails" class="slide-local-settings slide-environment-local-settings">
+                    <summary data-i18n="Slide-specific settings">Slide-specific settings</summary>
+                    <div id="slideEnvironmentEditorHome" class="slide-environment-editor-home"></div>
+
+                  </details>
+                  <!-- Legacy batch controls: kept for existing DOM bindings and data workflows.
+                       Not part of the Slide-specific Environment editor. Remove only after
+                       migrating the corresponding bindings in src/main.js. -->
+                    <div class="legacy-environment-batch-controls" hidden aria-hidden="true" inert>
+                  <div class="multi-slide-field-row">
+                    <label for="multiFogDensityInput" data-i18n="Fog Density"> Fog Density </label>
+                    <input
+                      id="multiFogDensityInput"
+                      type="number"
+                      step="0.0005"
+                      min="0"
+                    />
+                    <span
+                      id="multiFogDensityState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row">
+                    <input id="multiFogDensitySlider" type="range" min="0" max="0.05" step="0.0005" aria-label="Fog Density slider" data-i18n-aria-label="Fog Density slider">
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiFogColorInput" data-i18n="Fog Color"> Fog Color </label>
+                    <input id="multiFogColorInput" type="color" />
+                    <span
+                      id="multiFogColorState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div id="multiFogColorMixedLabel" class="multi-mixed-label" hidden data-i18n="— Mixed —">
+                    — Mixed —
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiUseSkyboxSelect" data-i18n="Sky Mode"> Sky Mode </label>
+                    <select id="multiUseSkyboxSelect">
+                      <option value="" data-i18n="— Mixed —">— Mixed —</option>
+                      <option value="true" data-i18n="Skybox">Skybox</option>
+                      <option value="false" data-i18n="Procedural Sky">Procedural Sky</option>
+                    </select>
+                    <span
+                      id="multiSkyboxState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <p class="environment-override-hint" data-i18n="Mixed sky mode explanation">Mixed means the selected slides use different sky modes. Fog is available in both modes.</p>
+                  <div class="multi-slide-field-row">
+                    <label for="multiTurbidityInput" data-i18n="Turbidity"> Turbidity </label>
+                    <input
+                      id="multiTurbidityInput"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                    />
+                    <span
+                      id="multiTurbidityState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row">
+                    <input id="multiTurbiditySlider" type="range" min="0" max="100" step="1" aria-label="Turbidity slider" data-i18n-aria-label="Turbidity slider">
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiInclinationInput" data-i18n="Inclination"> Inclination </label>
+                    <input
+                      id="multiInclinationInput"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                    />
+                    <span
+                      id="multiInclinationState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row">
+                    <input id="multiInclinationSlider" type="range" min="0" max="1" step="0.01" aria-label="Inclination slider" data-i18n-aria-label="Inclination slider">
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiAzimuthInput" data-i18n="Azimuth"> Azimuth </label>
+                    <input
+                      id="multiAzimuthInput"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                    />
+                    <span
+                      id="multiAzimuthState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row">
+                    <input id="multiAzimuthSlider" type="range" min="0" max="1" step="0.01" aria-label="Azimuth slider" data-i18n-aria-label="Azimuth slider">
+                  </div>
+                  <p class="environment-override-hint" data-i18n="Slide-specific environment fields below override the Scene settings; additional skybox controls are available through the detailed editor.">Slide-specific environment fields below override the Scene settings; additional skybox controls are available through the detailed editor.</p>
+                    </div>
+                  <button id="multiClearEnvironmentOverridesButton" class="secondary-button" data-i18n="Clear Environment Overrides">
+                    Clear Environment Overrides
+                  </button>
+                </div>
+              </div>
+<details class="inspector-section atmosphere-effects-card slide-atmosphere-card" id="slideAtmosphereEffectsCard" open>
+                <summary data-i18n="Atmosphere Override">Atmosphere Effect Override</summary>
+                <div class="inspector-section-content">
+                  <label class="scene1c-override-switch"><input id="slideAtmosphereOverrideEnabled" type="checkbox"> <span data-i18n="Use Slide Override">Use Slide Override</span></label>
+                  <p class="workspace-hint" data-i18n="Slide Atmosphere Override help">Off: inherit Scene effects. On: edit slide-specific effects.</p>
+                  <details id="slideAtmosphereCustomDetails" class="slide-local-settings" open>
+                    <summary data-i18n="Slide-specific settings">Slide-specific settings</summary>
+                    <div class="slide-atmosphere-local-content">
+                      <div class="input-group">
+                        <label for="slideAtmospherePreset" data-i18n="Atmosphere preset">Effect preset</label>
+                        <select id="slideAtmospherePreset">
+                          <option value="off" data-i18n="Atmosphere Off">Off</option>
+                          <option value="dust" data-i18n="Atmosphere Dust">Dust</option>
+                          <option value="sparkles" data-i18n="Atmosphere Sparkles">Sparkles</option>
+                          <option value="rain" data-i18n="Atmosphere Rain">Rain</option>
+                          <option value="snow" data-i18n="Atmosphere Snow">Snow</option>
+                          <option value="diamond-dust" data-i18n="Atmosphere Diamond Dust">Diamond Dust</option>
+                          <option value="fireflies" data-i18n="Atmosphere Fireflies">Fireflies</option>
+                          <option value="cosmic" data-i18n="Atmosphere Cosmic">Cosmic Field</option>
+                          <option value="bubbles" data-i18n="Atmosphere Bubbles">Bubbles</option><option value="rising-bands" data-i18n="Atmosphere Rising Bands">Rising Bands</option><option value="rising-bands-mix" data-i18n="Atmosphere Rising Bands Mix">Rising Bands (Mixed)</option>
+                        </select>
+                      </div>
+                      <div class="atmosphere-sliders">
+                        <div class="input-group"><label for="slideAtmosphereDensity" data-i18n="Atmosphere density">Density</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereDensity" min="0" max="200" step="0.1" value="55"><input type="number" id="slideAtmosphereDensityNumber" min="0" max="200" step="0.1" value="55" inputmode="decimal" aria-label="Density numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereSize" data-i18n="Atmosphere size">Size</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereSize" min="0" max="200" step="0.1" value="55"><input type="number" id="slideAtmosphereSizeNumber" min="0" max="200" step="0.1" value="55" inputmode="decimal" aria-label="Size numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereSpeed" data-i18n="Atmosphere speed">Speed</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereSpeed" min="0" max="200" step="0.1" value="55"><input type="number" id="slideAtmosphereSpeedNumber" min="0" max="200" step="0.1" value="55" inputmode="decimal" aria-label="Speed numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereWind" data-i18n="Atmosphere wind">Wind strength</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereWind" min="0" max="200" step="0.1" value="0"><input type="number" id="slideAtmosphereWindNumber" min="0" max="200" step="0.1" value="0" inputmode="decimal" aria-label="Wind numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereWindDirection" data-i18n="Atmosphere wind direction">Wind direction (°)</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereWindDirection" min="0" max="360" step="0.1" value="90"><input type="number" id="slideAtmosphereWindDirectionNumber" min="0" max="360" step="0.1" value="90" inputmode="decimal" aria-label="WindDirection numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereDistance" data-i18n="Atmosphere distance">Distance</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereDistance" min="0" max="200" step="0.1" value="85"><input type="number" id="slideAtmosphereDistanceNumber" min="0" max="200" step="0.1" value="85" inputmode="decimal" aria-label="Distance numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereForegroundRatio" data-i18n="Atmosphere foreground ratio">Foreground ratio</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereForegroundRatio" min="0" max="100" step="0.1" value="35"><input type="number" id="slideAtmosphereForegroundRatioNumber" min="0" max="100" step="0.1" value="35" inputmode="decimal" aria-label="ForegroundRatio numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereForegroundSize" data-i18n="Atmosphere foreground size">Foreground size</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereForegroundSize" min="0" max="100" step="0.1" value="72"><input type="number" id="slideAtmosphereForegroundSizeNumber" min="0" max="100" step="0.1" value="72" inputmode="decimal" aria-label="ForegroundSize numeric value"></div></div>
+                        <div class="input-group"><label for="slideAtmosphereForegroundSpeed" data-i18n="Atmosphere foreground speed">Foreground speed</label><div class="atmosphere-range"><input type="range" id="slideAtmosphereForegroundSpeed" min="0" max="100" step="0.1" value="65"><input type="number" id="slideAtmosphereForegroundSpeedNumber" min="0" max="100" step="0.1" value="65" inputmode="decimal" aria-label="ForegroundSpeed numeric value"></div></div>
+                        <div class="atmosphere-particles-heading" data-i18n="Atmosphere particles">Particle variants (weights are relative)</div>
+                        <div class="input-group"><label for="slideAtmosphereParticleCount" data-i18n="Atmosphere particle count">Number of particle variants</label><select id="slideAtmosphereParticleCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+                        <div class="atmosphere-particles-columns" aria-hidden="true"><span data-i18n="Atmosphere particle column">粒子</span><span data-i18n="Atmosphere color column">色</span><span data-i18n="Atmosphere shape column">形</span><span data-i18n="Atmosphere weight column">比率</span></div>
+                        <div class="atmosphere-particles" id="slideAtmosphereParticles">
+                          <div class="atmosphere-particle-row" id="slideAtmosphereParticleRow1">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 1">Particle 1</span>
+                            <input type="color" id="slideAtmosphereParticle1Color" value="#ffffff" aria-label="Particle 1 color">
+                            <select id="slideAtmosphereParticle1Shape" aria-label="Particle 1 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="slideAtmosphereParticle1Weight" min="0" max="100" step="0.1" value="50" inputmode="decimal" aria-label="Particle 1 weight">
+                          </div>
+                          <div class="atmosphere-particle-row" id="slideAtmosphereParticleRow2">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 2">Particle 2</span>
+                            <input type="color" id="slideAtmosphereParticle2Color" value="#ffffff" aria-label="Particle 2 color">
+                            <select id="slideAtmosphereParticle2Shape" aria-label="Particle 2 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="slideAtmosphereParticle2Weight" min="0" max="100" step="0.1" value="50" inputmode="decimal" aria-label="Particle 2 weight">
+                          </div>
+                          <div class="atmosphere-particle-row" id="slideAtmosphereParticleRow3">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 3">Particle 3</span>
+                            <input type="color" id="slideAtmosphereParticle3Color" value="#ffffff" aria-label="Particle 3 color">
+                            <select id="slideAtmosphereParticle3Shape" aria-label="Particle 3 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="slideAtmosphereParticle3Weight" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-label="Particle 3 weight">
+                          </div>
+                          <div class="atmosphere-particle-row" id="slideAtmosphereParticleRow4">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 4">Particle 4</span>
+                            <input type="color" id="slideAtmosphereParticle4Color" value="#ffffff" aria-label="Particle 4 color">
+                            <select id="slideAtmosphereParticle4Shape" aria-label="Particle 4 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="slideAtmosphereParticle4Weight" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-label="Particle 4 weight">
+                          </div>
+                        </div>
+                        <p class="workspace-hint" data-i18n="Atmosphere particle weights help">Weights are normalized automatically; 0 hides a variant.</p>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </details>
+
+              <div
+                id="multiTransitionSection"
+                class="multi-slide-collapsible-section"
+                data-section="transition"
+              >
+                <div class="multi-slide-section-header">
+                  <button
+                    id="multiTransitionSectionToggle"
+                    class="multi-section-toggle"
+                    type="button"
+                    aria-expanded="true"
+                  >
+                    <span id="multiTransitionSectionChevron" class="multi-section-chevron" aria-hidden="true">
+                      ▾
+                    </span>
+                    <span class="multi-slide-inspector-section-title" data-i18n="Transition Override" data-i18n-space="after">
+                      Transition Override
+                    </span>
+                  </button>
+                </div>
+                <div
+                  id="multiTransitionSectionBody"
+                  class="multi-slide-section-body"
+                >
+                  <div class="inspector-row scene1c-override-switch"><label for="slideTransitionUseOverride"><input id="slideTransitionUseOverride" type="checkbox" /><span data-i18n="Use Slide Override">Use Slide Override</span></label></div>
+                  <div class="batch-preset-row"><label for="slideTransitionMode" data-i18n="Setting source">Setting source</label><select id="slideTransitionMode"><option value="preset" data-i18n="Shared preset">Shared preset</option><option value="custom" data-i18n="Slide-specific settings">Slide-specific settings</option></select></div>
+                  <div id="slideTransitionPresetRow" class="batch-preset-row"><label for="multiTransitionPresetSelect" data-i18n="Transition Preset">Transition Preset</label><select id="multiTransitionPresetSelect"></select></div>
+                  <details id="slideTransitionCustomDetails" class="slide-local-settings"><summary data-i18n="Slide-specific settings">Slide-specific settings</summary>
+<div class="inspector-row"><label for="slideCustomTransitionTimingMode" data-i18n="Transition timing">Transition timing</label><select id="slideCustomTransitionTimingMode"><option value="speed" data-i18n="Speed">Speed</option><option value="duration" data-i18n="Duration">Duration</option></select></div>
+<div id="slideTransitionSpeedFields">
+                  <p class="environment-override-hint" data-i18n="Transition: inherits the Scene preset unless this slide sets a specific preset or overrides a value. Departure slide controls navigation.">Transition: inherits the Scene preset unless this slide sets a specific preset or overrides a value. Departure slide controls navigation.</p>
+                  <div class="multi-slide-field-row">
+                    <label for="multiPreviousSpeedInput" data-i18n="Previous Speed">
+                      Previous Speed
+                    </label>
+                    <input
+                      id="multiPreviousSpeedInput"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                    />
+                    <span
+                      id="multiPreviousSpeedState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row transition-speed-slider-row">
+                    <input type="range" id="multiPreviousSpeedSlider" min="0" max="10" step="0.01" value="1" aria-label="Previous Transition Speed" data-i18n-aria-label="Previous Transition Speed">
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiCurrentSpeedInput" data-i18n="Current Speed"> Current Speed </label>
+                    <input
+                      id="multiCurrentSpeedInput"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                    />
+                    <span
+                      id="multiCurrentSpeedState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row transition-speed-slider-row">
+                    <input type="range" id="multiCurrentSpeedSlider" min="0" max="10" step="0.01" value="1" aria-label="Current Transition Speed" data-i18n-aria-label="Current Transition Speed">
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiNextSpeedInput" data-i18n="Next Speed"> Next Speed </label>
+                    <input
+                      id="multiNextSpeedInput"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                    />
+                    <span
+                      id="multiNextSpeedState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slider-row transition-speed-slider-row">
+                    <input type="range" id="multiNextSpeedSlider" min="0" max="10" step="0.01" value="1" aria-label="Next Transition Speed" data-i18n-aria-label="Next Transition Speed">
+                  </div>
+                  </div>
+                  <div id="slideTransitionDurationFields" hidden>
+                    <div class="multi-slide-field-row"><label for="multiPreviousDurationInput" data-i18n="Previous Duration (s)">Previous Duration (s)</label><input id="multiPreviousDurationInput" type="number" min="0" max="120" step="0.1" /></div>
+                    <div class="multi-slide-field-row"><label for="multiCurrentDurationInput" data-i18n="Current Duration (s)">Current Duration (s)</label><input id="multiCurrentDurationInput" type="number" min="0" max="120" step="0.1" /></div>
+                    <div class="multi-slide-field-row"><label for="multiNextDurationInput" data-i18n="Next Duration (s)">Next Duration (s)</label><input id="multiNextDurationInput" type="number" min="0" max="120" step="0.1" /></div>
+                  </div></details>
+                  <button id="multiClearTransitionOverridesButton" class="secondary-button" data-i18n="Clear Transition Overrides">
+                    Clear Transition Overrides
+                  </button>
+                </div>
+              </div>
+              <div
+                id="multiSoundSection"
+                class="multi-slide-collapsible-section"
+                data-section="sound"
+              >
+                <div class="multi-slide-section-header">
+                  <button
+                    id="multiSoundSectionToggle"
+                    class="multi-section-toggle"
+                    type="button"
+                    aria-expanded="true"
+                  >
+                    <span id="multiSoundSectionChevron" class="multi-section-chevron" aria-hidden="true">
+                      ▾
+                    </span>
+                    <span class="multi-slide-inspector-section-title" data-i18n="Sound Override" data-i18n-space="after">
+                      Sound Override
+                    </span>
+                  </button>
+                </div>
+                <div
+                  id="multiSoundSectionBody"
+                  class="multi-slide-section-body"
+                >
+                  <div class="inspector-row scene1c-override-switch"><label for="slideSoundUseOverride"><input id="slideSoundUseOverride" type="checkbox" /><span data-i18n="Use Slide Override">Use Slide Override</span></label></div>
+                  <div class="batch-preset-row"><label for="slideSoundMode" data-i18n="Setting source">Setting source</label><select id="slideSoundMode"><option value="preset" data-i18n="Shared preset">Shared preset</option><option value="custom" data-i18n="Slide-specific settings">Slide-specific settings</option></select></div>
+                  <div id="slideSoundPresetRow" class="batch-preset-row"><label for="multiSoundPresetSelect" data-i18n="Sound Preset">Sound Preset</label><select id="multiSoundPresetSelect"></select></div>
+                  <details id="slideSoundCustomDetails" class="slide-local-settings"><summary data-i18n="Slide-specific settings">Slide-specific settings</summary>
+                  <p class="environment-override-hint" data-i18n="Sound: inherits the Scene preset unless this slide selects a specific preset or overrides a value. Departure slide controls navigation.">Sound: inherits the Scene preset unless this slide selects a specific preset or overrides a value. Departure slide controls navigation.</p>
+                  <div class="multi-slide-field-row">
+                    <label for="multiPreviousSoundSelect" data-i18n="Previous"> Previous </label>
+                    <select id="multiPreviousSoundSelect"></select>
+                    <span
+                      id="multiPreviousSoundState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiCurrentSoundSelect" data-i18n="Current"> Current </label>
+                    <select id="multiCurrentSoundSelect"></select>
+                    <span
+                      id="multiCurrentSoundState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  <div class="multi-slide-field-row">
+                    <label for="multiNextSoundSelect" data-i18n="Next"> Next </label>
+                    <select id="multiNextSoundSelect"></select>
+                    <span
+                      id="multiNextSoundState"
+                      class="multi-field-state"
+                    ></span>
+                  </div>
+                  </details>
+                  <button id="multiClearSoundOverridesButton" class="secondary-button" data-i18n="Clear Sound Overrides">
+                    Clear Sound Overrides
+                  </button>
+                </div>
+              </div>
+
+                <details class="inspector-section" open id="slideBgmSection"><summary data-i18n="BGM Override">BGM Override</summary><div class="inspector-section-content"><div class="inspector-row">
+                  <label>
+                    <input id="slideBgmUseOverride" type="checkbox" /><span data-i18n="Use Slide Override" data-i18n-space="after">
+                    Use Slide Override
+                  </span></label>
+                </div><div class="inspector-row">
+                  <label for="slideBgmEnabled" data-i18n="Enabled"> Enabled </label>
+                  <input id="slideBgmEnabled" type="checkbox" />
+                </div><div class="inspector-row">
+                  <label for="slideBgmSoundSelect" data-i18n="Audio track"> Audio track </label>
+                  <select id="slideBgmSoundSelect">
+                    <option value="" data-i18n="None">None</option>
+                  </select>
+                </div><div class="inspector-row">
+                  <label for="slideBgmVolume" data-i18n="Volume"> Volume </label>
+                  <input
+                    id="slideBgmVolume"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                  />
+                  <input id="slideBgmVolumeSlider" type="range" min="0" max="1" step="0.01" aria-label="Slide BGM volume slider" data-i18n-aria-label="Slide BGM volume slider">
+                </div><div class="inspector-row">
+                  <label for="slideBgmLoop" data-i18n="Loop"> Loop </label>
+                  <input id="slideBgmLoop" type="checkbox" />
+                </div>
+                <div class="inspector-row"><label for="slideBgmFadeIn" data-i18n="BGM Fade-in (s)">BGM Fade-in (s)</label><input id="slideBgmFadeIn" type="number" min="0" max="10" step="0.1" /></div>
+                <div class="inspector-row"><label for="slideBgmFadeOut" data-i18n="BGM Fade-out (s)">BGM Fade-out (s)</label><input id="slideBgmFadeOut" type="number" min="0" max="10" step="0.1" /></div>
+                <div class="inspector-row"><label for="slideBgmContinueSame" data-i18n="Continue same BGM across scenes">Continue same BGM across scenes</label><input id="slideBgmContinueSame" type="checkbox" checked /></div><div class="multi-transform-camera-actions">
+                  <button id="slideBgmClearButton" class="small-button secondary-button" type="button" data-i18n="Clear Override">
+                    Clear Override
+                  </button>
+                </div><div
+                  id="slideBgmEffectiveValue"
+                  class="project-bgm-status"
+                ></div></div></details>
+
+                <details
+                  id="slideAutoPlaySection"
+                  class="inspector-section"
+                  open
+                ><summary data-i18n="AutoPlay Override">AutoPlay Override</summary><div class="inspector-section-content">
+                  
+                  <div class="inspector-row">
+                    <label for="slideAutoPlayUseOverride" data-i18n="Use Slide Override"> Use Slide Override </label>
+                    <input id="slideAutoPlayUseOverride" type="checkbox" />
+                  </div>
+                  <div class="inspector-row">
+                    <label for="slideAutoPlayInterval" data-i18n="Interval"> Interval </label>
+                    <input
+                      id="slideAutoPlayInterval"
+                      type="number"
+                      min="0.1"
+                      max="3600"
+                      step="0.1"
+                      value="5"
+                    />
+                  </div>
+                  <button id="slideAutoPlayClearButton" class="small-button" type="button" data-i18n="Clear Override">
+                    Clear Override
+                  </button>
+                  <p
+                    id="slideAutoPlayEffectiveValue"
+                    class="inspector-effective-value"
+                  ></p>
+                </div></details>
+                <details id="slideInteractionSection" class="inspector-section" open>
+                  <summary data-i18n="Interaction">Interaction</summary>
+                  <div class="inspector-section-content">
+                    <div class="inspector-row"><label for="slideInteractionType" data-i18n="Link action">Link action</label><select id="slideInteractionType"><option value="none" data-i18n="None">None</option><option value="open-url" data-i18n="Open URL">Open URL</option><option value="local-web" data-i18n="Local web page">Local web page</option></select></div>
+                    <div class="inspector-row" id="slideInteractionUrlRow"><label id="slideInteractionUrlLabel" for="slideInteractionUrl" data-i18n="URL (http/https)">URL (http/https)</label><input id="slideInteractionUrl" type="url" placeholder="https://example.com" spellcheck="false" /></div>
+                    <p id="slideInteractionStatus" class="workspace-hint" aria-live="polite"></p>
+                    <button id="slideInteractionTest" type="button" class="small-button" data-i18n="Test URL">Test URL</button>
+                    <div class="slide-attachment-controls">
+                      <label data-i18n="Attached text">Attached text</label>
+                      <p class="workspace-hint" data-i18n="Text attachment help">Store code or notes independently of the link action.</p>
+                      <p id="slideAttachedTextStatus" class="workspace-hint" aria-live="polite"></p>
+                      <div class="library-management-actions"><button id="slideAttachedTextEdit" type="button" class="small-button" data-i18n="Edit attached text">Edit attached text</button><button id="slideAttachedTextClear" type="button" class="small-button" data-i18n="Clear text">Clear text</button></div>
+                    </div>
+                  </div>
+                </details>
+            </div></section><section id="workspace-transform" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-transform" data-workspace-panel="transform" hidden><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 03</span><h1 data-i18n="Transform">Transform</h1><p data-i18n="位置・回転・スケール・Gizmo">位置・回転・スケール・Gizmo</p><div class="workspace-panel-actions" role="group" aria-label="このパネルの項目を開閉" data-i18n-aria-label="このパネルの項目を開閉"><button type="button" class="small-button" data-expand-panel="transform" data-i18n="Expand All">Expand All</button><button type="button" class="small-button" data-collapse-panel="transform" data-i18n="Collapse All">Collapse All</button></div></div><!-- Scene-2U: one selection-facing Gizmo toolbar. Existing per-type
+     coordinate/Snap/Inspector controls remain for backwards compatibility. -->
+            <details id="scene4qTransformDisclosure" class="inspector-section scene4q-transform-disclosure" open>
+              <summary data-i18n="Selection Gizmo and Transform">Selection Gizmo and Transform</summary>
+              <div class="scene4q-transform-body">
+              <section id="scene2uSelectionGizmo" class="scene2u-selection-gizmo inspector-section" aria-label="Selection Gizmo">
+              <div class="scene2u-selection-header"><strong data-i18n="Selection Gizmo">Selection Gizmo</strong><span id="scene2uSelectionCount" aria-live="polite">0 selected</span></div>
+              <div class="scene2u-selection-line scene2u-gizmo-modes" role="group" aria-label="Selection Gizmo modes">
+                <button type="button" id="scene2uMoveButton" data-i18n="Move">Move</button>
+                <button type="button" id="scene2uRotateButton" data-i18n="Rotate">Rotate</button>
+                <button type="button" id="scene2uScaleButton" data-i18n="Scale">Scale</button>
+                <button type="button" id="scene2uOffButton" data-i18n="Off">Off</button>
+              </div>
+              <div class="scene2u-selection-line scene2y-active-row">
+                <label for="scene2yActiveObjectSelect" data-i18n="Active selection object">Active selection object</label>
+                <select id="scene2yActiveObjectSelect" aria-label="Active selection object"></select>
+              </div>
+
+              <!-- Scene-2V: unified selection transform controls. The legacy controls remain synchronized. -->
+              <div class="scene2v-transform-settings">
+                <label><span data-i18n="Transform pivot">Transform pivot</span>
+                  <select id="scene2vPivot"><option value="group" data-i18n="Group">Group</option><option value="individual" selected data-i18n="In place">In place</option></select>
+                </label>
+                <label><span data-i18n="Group anchor">Group anchor</span>
+                  <select id="scene2vAnchor"><option value="active" data-i18n="Active object">Active object</option><option value="center" data-i18n="Selection center (average)">Selection center (average)</option></select>
+                </label>
+                <label><span data-i18n="Coordinates">Coordinates</span>
+                  <select id="scene2vCoordinates"><option value="world" data-i18n="World">World</option><option value="local" data-i18n="Local">Local</option></select>
+                </label>
+                <p class="workspace-hint scene4g-local-scale-note" data-i18n="Scale is always local">Scale always uses local object axes (including Slide, GLB and SPZ); World/Local applies to Move and Rotate.</p>
+                <label><span data-i18n="Snap">Snap</span><select id="scene2vSnapValue" aria-label="Snap"></select></label>
+              </div>
+              <!-- Scene-3K: same XYZ editor for Active Object / Selection. -->
+              <section id="scene3kUnifiedEditor" class="scene3k-unified inspector-section" aria-label="Unified transform editor">
+                <hr class="scene4d-transform-separator"/>
+                <div class="scene4j-selection-controls">
+                  <strong data-i18n="Selection controls">Selection controls</strong>
+                  <div class="scene4j-selection-buttons">
+                    <button type="button" id="scene4jFocusOnly" class="small-button" data-i18n="Select active object only">Select active object only</button>
+                    <button type="button" id="scene4jClearSlides" class="small-button" data-i18n="Clear Slide selection">Clear Slide selection</button>
+                    <button type="button" id="scene4jClearAssets" class="small-button" data-i18n="Clear Asset selection">Clear Asset selection</button>
+                  </div>
+                  <p class="workspace-hint" data-i18n="Selection controls help">Transform edits all selected objects. Active Object defines the pivot, not a separate transform target. Current Slide remains unchanged when clearing selection.</p>
+                </div>
+                <details id="camera2bTransformNumericDetails" class="inspector-section camera2b-numeric-details" open><summary data-i18n="Numeric transform settings">Numeric transform settings</summary><div class="inspector-section-content"><div class="scene3l-method-switch"><strong data-i18n="Transform input method">Transform input method</strong><div role="group" aria-label="Transform input method">
+                  <button type="button" id="scene3lAbsoluteMethod" class="small-button scene3k-scope-button" aria-pressed="false" data-i18n="Absolute values">Absolute values</button>
+                  <button type="button" id="scene3lDeltaMethod" class="small-button scene3k-scope-button" aria-pressed="true" data-i18n="Relative delta / factor">Relative Δ / Factor</button>
+                </div></div>
+                <p id="scene3lMethodHelp" class="workspace-hint" aria-live="polite"></p>
+                <p id="scene3kTargetSummary" class="scene3j-selection-status" aria-live="polite"></p>
+                <div id="scene3kAxisEditors" class="scene3k-axis-editors">
+                  <div class="scene3k-axis-card" data-scene3k-card="position"><div class="scene3k-axis-header"><strong data-i18n="Position">Position</strong><span id="scene3kPositionMeaning"></span></div>
+                    <div class="scene3k-table-head"><span></span><span>X</span><span>Y</span><span>Z</span></div>
+                    <div class="scene3k-values"><span data-i18n="Value">Value</span><input id="scene3kPositionX" type="number" step="any"  aria-label="Position X"/><input id="scene3kPositionY" type="number" step="any"  aria-label="Position Y"/><input id="scene3kPositionZ" type="number" step="any"  aria-label="Position Z"/></div><div class="scene3k-nudges"><span data-i18n="Adjust">Adjust</span><div><button type="button" class="small-button" data-scene3k-nudge="position:X:-1" aria-label="Position X minus">−</button><button type="button" class="small-button" data-scene3k-nudge="position:X:1" aria-label="Position X plus">+</button></div><div><button type="button" class="small-button" data-scene3k-nudge="position:Y:-1" aria-label="Position Y minus">−</button><button type="button" class="small-button" data-scene3k-nudge="position:Y:1" aria-label="Position Y plus">+</button></div><div><button type="button" class="small-button" data-scene3k-nudge="position:Z:-1" aria-label="Position Z minus">−</button><button type="button" class="small-button" data-scene3k-nudge="position:Z:1" aria-label="Position Z plus">+</button></div></div><div class="scene3k-sliders"><span data-i18n="Fine adjustment">Fine adjustment</span><input type="range" id="scene3kPositionXSlider" data-scene3k-slider="position:X" step="any" aria-label="Position X slider"/><input type="range" id="scene3kPositionYSlider" data-scene3k-slider="position:Y" step="any" aria-label="Position Y slider"/><input type="range" id="scene3kPositionZSlider" data-scene3k-slider="position:Z" step="any" aria-label="Position Z slider"/></div><div class="scene3k-actions"><label class="scene3o-range-control" for="scene3oPositionRange"><span data-i18n="Position slider limit">Position slider limit</span><select id="scene3oPositionRange"><option value="2">±2</option><option value="5">±5</option><option value="10" selected>±10</option><option value="20">±20</option><option value="50">±50</option><option value="100">±100</option><option value="500">±500</option><option value="1000">±1000</option></select></label><button type="button" class="small-button" data-scene3k-reset="position" data-i18n="Reset">Reset</button><button type="button" class="small-button" id="scene3kApplyPosition" data-i18n="Apply">Apply</button></div></div>
+                  <div class="scene3k-axis-card" data-scene3k-card="rotation"><div class="scene3k-axis-header"><strong data-i18n="Rotation (degrees)">Rotation (degrees)</strong><span id="scene3kRotationMeaning"></span></div>
+                    <div class="scene3k-table-head"><span></span><span>X</span><span>Y</span><span>Z</span></div>
+                    <div class="scene3k-values"><span data-i18n="Value">Value</span><input id="scene3kRotationX" type="number" step="any"  aria-label="Rotation X"/><input id="scene3kRotationY" type="number" step="any"  aria-label="Rotation Y"/><input id="scene3kRotationZ" type="number" step="any"  aria-label="Rotation Z"/></div><div class="scene3k-nudges"><span data-i18n="Adjust">Adjust</span><div><button type="button" class="small-button" data-scene3k-nudge="rotation:X:-1" aria-label="Rotation X minus">−</button><button type="button" class="small-button" data-scene3k-nudge="rotation:X:1" aria-label="Rotation X plus">+</button></div><div><button type="button" class="small-button" data-scene3k-nudge="rotation:Y:-1" aria-label="Rotation Y minus">−</button><button type="button" class="small-button" data-scene3k-nudge="rotation:Y:1" aria-label="Rotation Y plus">+</button></div><div><button type="button" class="small-button" data-scene3k-nudge="rotation:Z:-1" aria-label="Rotation Z minus">−</button><button type="button" class="small-button" data-scene3k-nudge="rotation:Z:1" aria-label="Rotation Z plus">+</button></div></div><div class="scene3k-sliders"><span data-i18n="Fine adjustment">Fine adjustment</span><input type="range" id="scene3kRotationXSlider" data-scene3k-slider="rotation:X" step="any" aria-label="Rotation X slider"/><input type="range" id="scene3kRotationYSlider" data-scene3k-slider="rotation:Y" step="any" aria-label="Rotation Y slider"/><input type="range" id="scene3kRotationZSlider" data-scene3k-slider="rotation:Z" step="any" aria-label="Rotation Z slider"/></div><div class="scene3k-actions"><button type="button" class="small-button" data-scene3k-reset="rotation" data-i18n="Reset">Reset</button><button type="button" class="small-button" id="scene3kApplyRotation" data-i18n="Apply">Apply</button></div></div>
+                  <div class="scene3k-axis-card" data-scene3k-card="scale"><div class="scene3k-axis-header"><strong data-i18n="Scale">Scale</strong><span id="scene3kScaleMeaning"></span></div>
+                    <div class="scene3k-table-head"><span></span><span>X</span><span>Y</span><span>Z</span></div>
+                    <div class="scene3k-values"><span data-i18n="Value">Value</span><input id="scene3kScaleX" type="number" step="any" min="0.000001" aria-label="Scale X"/><input id="scene3kScaleY" type="number" step="any" min="0.000001" aria-label="Scale Y"/><input id="scene3kScaleZ" type="number" step="any" min="0.000001" aria-label="Scale Z"/></div><div class="scene3k-nudges"><span data-i18n="Adjust">Adjust</span><div><button type="button" class="small-button" data-scene3k-nudge="scale:X:-1" aria-label="Scale X minus">−</button><button type="button" class="small-button" data-scene3k-nudge="scale:X:1" aria-label="Scale X plus">+</button></div><div><button type="button" class="small-button" data-scene3k-nudge="scale:Y:-1" aria-label="Scale Y minus">−</button><button type="button" class="small-button" data-scene3k-nudge="scale:Y:1" aria-label="Scale Y plus">+</button></div><div><button type="button" class="small-button" data-scene3k-nudge="scale:Z:-1" aria-label="Scale Z minus">−</button><button type="button" class="small-button" data-scene3k-nudge="scale:Z:1" aria-label="Scale Z plus">+</button></div></div><div class="scene3k-sliders"><span data-i18n="Fine adjustment">Fine adjustment</span><input type="range" id="scene3kScaleXSlider" data-scene3k-slider="scale:X" step="any" aria-label="Scale X slider"/><input type="range" id="scene3kScaleYSlider" data-scene3k-slider="scale:Y" step="any" aria-label="Scale Y slider"/><input type="range" id="scene3kScaleZSlider" data-scene3k-slider="scale:Z" step="any" aria-label="Scale Z slider"/></div><div class="scene3k-actions scene3q-scale-actions"><label class="scene3k-scale-link"><input type="checkbox" id="scene3kScaleLink" checked/><span id="scene3kScaleLinkLabel" data-i18n="Link XYZ scale">Link XYZ scale</span></label><button type="button" class="small-button" data-scene3k-reset="scale" data-i18n="Reset">Reset</button><button type="button" class="small-button" id="scene3kApplyScale" data-i18n="Apply">Apply</button></div></div>
+                </div></div></details><details id="scene3oObjectExtras" class="scene3o-object-extras inspector-section" open><summary data-i18n="Object-specific controls">Object-specific controls</summary><div class="inspector-section-content"><p id="scene3oExtrasSummary" class="workspace-hint" aria-live="polite"></p><div id="scene3oCameraExtras" hidden>
+  <h4 data-i18n="Slide camera placement">Slide camera placement</h4>
+  <p class="workspace-hint" data-i18n="Camera distance changes saved Slide camera positions">Edit the saved camera distance of the active or selected Slides. The view follows only when it is near the previous camera position.</p>
+  <div class="scene3p-camera-controls">
+                <div class="multi-transform-row multi-camera-distance-row">
+                  <span class="multi-transform-axis" data-i18n="Distance" data-i18n-space="after"> Distance </span>
+                  <div class="numeric-slider-cell"><input id="multiCameraDistanceInput" type="number" step="0.1" min="0.1" placeholder="Mixed" aria-label="multi Camera Distance Input" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Camera Distance Input"><input type="range" id="multiCameraDistanceSlider" min="0.1" max="20" step="0.1" value="1" aria-label="Slide camera distance" data-i18n-aria-label="Slide camera distance"></div>
+                </div>
+                <div class="multi-transform-row multi-camera-distance-row">
+                  <span class="multi-transform-axis"> Δ </span>
+                  <div class="numeric-slider-cell"><input id="multiCameraDistanceDeltaInput" type="number" step="0.1" value="1" aria-label="multi Camera Distance Delta Input" data-i18n-aria-label="multi Camera Distance Delta Input"></div>
+                  <button id="multiApplyCameraDistanceDeltaButton" class="small-button" data-i18n="Adjust by Δ">
+                    Adjust by Δ
+                  </button>
+                </div>
+  </div>
+  <button id="placeSlideInFrontOfCameraButton" type="button" hidden tabindex="-1" aria-hidden="true" data-i18n="Camera前へ配置">Camera前へ配置</button>
+</div><div id="scene3oGlowExtras" hidden><h4 data-i18n="Asset glow">Asset glow</h4><div class="inspector-row">
+                      <label for="assetGlowCheck" data-i18n="Glow"> Glow </label>
+                      <input type="checkbox" id="assetGlowCheck" />
+                    </div><p class="workspace-hint" data-i18n="Mixed glow selection hint">A mixed selection is shown as a partial state; changing this checkbox applies to the chosen Assets.</p></div></div></details><p id="scene3kError" role="alert" class="scene3d-numeric-error" hidden></p>
+              </section>
+              <p class="workspace-hint" data-i18n="Scene-2V selection transform help">Group rotates and scales the selection around its anchor; In place keeps each object in its position. Selection Center places the Gizmo at a virtual pivot. Use Input method above to edit XYZ values.</p>
+            </section>
+              </div>
+            </details>
+            <div
+              id="multiTransformSection" class="scene3y-compatibility-only"
+              class="multi-slide-collapsible-section"
+            >
+              <div class="multi-slide-section-header">
+                <button
+                  id="multiTransformSectionToggle"
+                  class="multi-section-toggle"
+                  type="button"
+                  aria-expanded="true"
+                >
+                  <span id="multiTransformSectionChevron" class="multi-section-chevron" aria-hidden="true">
+                    ▾
+                  </span>
+                  <span class="multi-slide-inspector-section-title" data-i18n="Slide Transform" data-i18n-space="after">
+                    Slide Transform
+                  </span>
+                  <span
+                    id="slideTransformTargetLabel"
+                    class="shared-transform-target"
+                  ></span>
+                </button>
+              </div>
+              <div
+                id="multiTransformSectionBody"
+                class="multi-slide-section-body"
+              ><details id="scene3iSlideLegacy" class="scene3i-legacy-panel inspector-section" hidden><summary data-i18n="Legacy Slide transform controls">Legacy Slide transform controls</summary><div class="inspector-section-content"><p class="workspace-hint" data-i18n="Use Selection Gizmo and Active Object transform above for everyday editing; open these compatible controls only when needed.">Use Selection Gizmo and Active Object transform above for everyday editing; open these compatible controls only when needed.</p><!-- Scene-3W: The shared Selection Gizmo is the only Gizmo UI. Hidden pivot selector remains as an adapter for existing history. -->
+<div class="scene3w-pivot-adapter" hidden><label class="rotation-pivot-control"><span data-i18n="Transform pivot">Transform pivot</span> <select id="slideTransformPivotMode"><option value="group" data-i18n="Group">Group</option><option value="individual" data-i18n="In place">In place</option></select></label></div><p class="workspace-hint" data-i18n="左が数値、右がΔ（相対量）です。スライダーは数値の直下にあります。Enter / フォーカス移動で確定、Escapeで取消。">左が数値、右がΔ（相対量）です。スライダーは数値の直下にあります。Enter / フォーカス移動で確定、Escapeで取消。</p><div class="ui1g-transform-values"><details class="ui1g-transform-subsection" open><summary data-i18n="Position">Position</summary><div class="ui1g-transform-subsection-content"><div class="multi-transform-row">
+                  <span class="multi-transform-axis"> X </span>
+                  <div class="numeric-slider-cell"><input id="multiPositionXInput" type="number" step="0.1" placeholder="Mixed" aria-label="multi Position XInput" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Position XInput"></div>
+                  <span class="multi-transform-delta-label"> Δ </span>
+                  <input id="multiPositionXDeltaInput" type="number" step="0.1" value="1" aria-label="multi Position XDelta Input" data-i18n-aria-label="multi Position XDelta Input">
+                  <button id="multiApplyPositionXDeltaButton" class="small-button" data-i18n="Move by Δ">
+                    Move by Δ
+                  </button>
+                </div><div class="multi-transform-row">
+                  <span class="multi-transform-axis">Y</span>
+                  <div class="numeric-slider-cell"><input id="multiPositionYInput" type="number" step="0.1" placeholder="Mixed" aria-label="multi Position YInput" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Position YInput"></div>
+                  <span class="multi-transform-delta-label">Δ</span>
+                  <input id="multiPositionYDeltaInput" type="number" step="0.1" value="1" aria-label="multi Position YDelta Input" data-i18n-aria-label="multi Position YDelta Input">
+                  <button id="multiApplyPositionYDeltaButton" class="small-button" data-i18n="Move by Δ">
+                    Move by Δ
+                  </button>
+                </div><div class="multi-transform-row">
+                  <span class="multi-transform-axis">Z</span>
+                  <div class="numeric-slider-cell"><input id="multiPositionZInput" type="number" step="0.1" placeholder="Mixed" aria-label="multi Position ZInput" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Position ZInput"></div>
+                  <span class="multi-transform-delta-label">Δ</span>
+                  <input id="multiPositionZDeltaInput" type="number" step="0.1" value="1" aria-label="multi Position ZDelta Input" data-i18n-aria-label="multi Position ZDelta Input">
+                  <button id="multiApplyPositionZDeltaButton" class="small-button" data-i18n="Move by Δ">
+                    Move by Δ
+                  </button>
+                </div>
+                </div></details><details class="ui1g-transform-subsection" open><summary data-i18n="Rotation">Rotation</summary><div class="ui1g-transform-subsection-content">
+                <button id="multiSlideRotationResetButton" type="button" class="small-button" data-i18n="Reset Rotation">Reset Rotation</button>
+                <p class="rotation-space-hint" id="slideRotationSpaceHint" data-i18n="Euler angles are displayed. Target changes and Δ rotate about World Gizmo axes; displayed angles may differ after compound rotation.">Euler angles are displayed. Target changes and Δ rotate about World Gizmo axes; displayed angles may differ after compound rotation.</p><div class="multi-transform-row">
+                  <span class="multi-transform-axis" data-i18n="Pitch" data-i18n-space="after"> Pitch </span>
+                  <div class="numeric-slider-cell"><input id="multiRotationPitchInput" type="number" step="1" placeholder="Mixed" aria-label="multi Rotation Pitch Input" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Rotation Pitch Input"><input id="multiRotationPitchSlider" type="range" min="-180" max="180" step="1" value="0" aria-label="Pitch rotation slider" data-i18n-aria-label="Pitch rotation slider"></div>
+                  <span class="multi-transform-delta-label">Δ°</span>
+                  <input id="multiRotationPitchDeltaInput" type="number" step="1" value="15" aria-label="multi Rotation Pitch Delta Input" data-i18n-aria-label="multi Rotation Pitch Delta Input">
+                  <button id="multiApplyRotationPitchDeltaButton" class="small-button" data-i18n="Rotate by Δ">
+                    Rotate by Δ
+                  </button>
+                </div>
+                <div class="multi-transform-row">
+                  <span class="multi-transform-axis" data-i18n="Yaw" data-i18n-space="after"> Yaw </span>
+                  <div class="numeric-slider-cell"><input id="multiRotationYawInput" type="number" step="1" placeholder="Mixed" aria-label="multi Rotation Yaw Input" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Rotation Yaw Input"><input id="multiRotationYawSlider" type="range" min="-180" max="180" step="1" value="0" aria-label="Yaw rotation slider" data-i18n-aria-label="Yaw rotation slider"></div>
+                  <span class="multi-transform-delta-label">Δ°</span>
+                  <input id="multiRotationYawDeltaInput" type="number" step="1" value="15" aria-label="multi Rotation Yaw Delta Input" data-i18n-aria-label="multi Rotation Yaw Delta Input">
+                  <button id="multiApplyRotationYawDeltaButton" class="small-button" data-i18n="Rotate by Δ">
+                    Rotate by Δ
+                  </button>
+                </div>
+                <div class="multi-transform-row">
+                  <span class="multi-transform-axis" data-i18n="Roll" data-i18n-space="after"> Roll </span>
+                  <div class="numeric-slider-cell"><input id="multiRotationRollInput" type="number" step="1" placeholder="Mixed" aria-label="multi Rotation Roll Input" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Rotation Roll Input"><input id="multiRotationRollSlider" type="range" min="-180" max="180" step="1" value="0" aria-label="Roll rotation slider" data-i18n-aria-label="Roll rotation slider"></div>
+                  <span class="multi-transform-delta-label">Δ°</span>
+                  <input id="multiRotationRollDeltaInput" type="number" step="1" value="15" aria-label="multi Rotation Roll Delta Input" data-i18n-aria-label="multi Rotation Roll Delta Input">
+                  <button id="multiApplyRotationRollDeltaButton" class="small-button" data-i18n="Rotate by Δ">
+                    Rotate by Δ
+                  </button>
+                </div>
+                </div></details><details class="ui1g-transform-subsection" open><summary data-i18n="Scale">Scale</summary><div class="ui1g-transform-subsection-content"><div class="multi-scale-header ui1f-scale-controls">
+                  <button id="multiSlideScaleResetButton" type="button" class="small-button" data-i18n="Reset Scale">
+                    Reset Scale
+                  </button>
+                  <button id="multiScaleLinkButton" class="small-button multi-scale-link-button linked" type="button" aria-pressed="true" title="Keep scale proportions" data-i18n-title="Keep scale proportions">
+                    🔗
+                  </button>
+                </div>
+                <div class="multi-transform-row">
+                  <span class="multi-transform-axis"> H </span>
+                  <div class="numeric-slider-cell"><input id="multiScaleXInput" type="number" step="0.01" min="0.01" placeholder="Mixed" aria-label="multi Scale XInput" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Scale XInput"><input type="range" id="multiScaleXSlider" min="0.01" max="5" step="0.01" value="1" aria-label="Slide scale H" data-i18n-aria-label="Slide scale H"></div>
+                  <span class="multi-transform-delta-label"> Δ </span>
+                  <input id="multiScaleXDeltaInput" type="number" step="0.01" value="0.1" aria-label="multi Scale XDelta Input" data-i18n-aria-label="multi Scale XDelta Input">
+                  <button id="multiApplyScaleXDeltaButton" class="small-button" data-i18n="Scale by Δ">
+                    Scale by Δ
+                  </button>
+                </div>
+                <div class="multi-transform-row">
+                  <span class="multi-transform-axis"> V </span>
+                  <div class="numeric-slider-cell"><input id="multiScaleYInput" type="number" step="0.01" min="0.01" placeholder="Mixed" aria-label="multi Scale YInput" data-i18n-placeholder="Mixed" data-i18n-aria-label="multi Scale YInput"><input type="range" id="multiScaleYSlider" min="0.01" max="5" step="0.01" value="1" aria-label="Slide scale V" data-i18n-aria-label="Slide scale V"></div>
+                  <span class="multi-transform-delta-label"> Δ </span>
+                  <input id="multiScaleYDeltaInput" type="number" step="0.01" value="0.1" aria-label="multi Scale YDelta Input" data-i18n-aria-label="multi Scale YDelta Input">
+                  <button id="multiApplyScaleYDeltaButton" class="small-button" data-i18n="Scale by Δ">
+                    Scale by Δ
+                  </button>
+                </div>
+                <div class="multi-transform-row">
+                  <span class="multi-transform-axis"> Z </span>
+                  <div class="numeric-slider-cell"><input id="multiScaleZInput" type="number" step="0.01" min="0.01" placeholder="Mixed" aria-label="Slide Scale Z" data-i18n-placeholder="Mixed"><input type="range" id="multiScaleZSlider" min="0.01" max="5" step="0.01" value="1" aria-label="Slide scale Z"></div>
+                  <span class="multi-transform-delta-label"> Δ </span>
+                  <input id="multiScaleZDeltaInput" type="number" step="0.01" value="0.1" aria-label="Slide Scale Z delta">
+                  <button id="multiApplyScaleZDeltaButton" class="small-button" data-i18n="Scale by Δ">Scale by Δ</button>
+                </div>
+                </div></details>
+                </div></div></details></div>
+            </div><details id="scene3yLegacyAssetTransformCard" class="inspector-section scene3y-compatibility-only"><summary data-i18n="Asset Transform">Asset Transform</summary><div class="inspector-section-content"><p class="workspace-hint" data-i18n="Scene &amp; Assetsで追加したAssetを選んで編集します。">Scene &amp; Assetsで追加したAssetを選んで編集します。</p><div id="sceneAssetEditorContent"><p class="workspace-hint" data-i18n="Use the unified Selection Transform for Move Rotate and Scale">Use the unified Selection Transform above for Move, Rotate and Scale. This section shows Asset identification.</p><div class="inspector-row">
+                      <label for="sceneAssetSelector" data-i18n="Asset"> Asset </label>
+                      <select id="sceneAssetSelector"></select>
+                    </div><div class="asset-info">
+                      <div><span data-i18n="ID:" data-i18n-space="after">
+                        ID:
+                        </span><span id="selectedAssetId"> </span>
+                      </div>
+                      <div><span data-i18n="Type:" data-i18n-space="after">
+                        Type:
+                        </span><span id="selectedAssetType"> </span>
+                      </div>
+                      <div><span data-i18n="Source:" data-i18n-space="after">
+                        Source:
+                        </span><span id="selectedAssetSource"> </span>
+                      </div>
+                    </div><div id="scene3qAssetLegacy" class="scene3q-asset-legacy" hidden aria-hidden="true"><!-- Scene-3W: Old asset Gizmo controls removed; retain pivot and group-status adapters. -->
+<div class="scene3w-pivot-adapter" hidden><label class="rotation-pivot-control"><span data-i18n="Transform pivot">Transform pivot</span> <select id="assetTransformPivotMode"><option value="group" data-i18n="Group">Group</option><option value="individual" data-i18n="In place">In place</option></select></label><div id="scene2cGroupStatus" aria-live="polite"></div></div><details class="inspector-section"><summary data-i18n="Position">Position</summary><div class="inspector-section-content">
+                    <div class="asset-transform-grid">
+                      <div class="asset-transform-heading"><span data-i18n="Axis">Axis</span><span data-i18n="Absolute">Absolute</span><span data-i18n="Δ (offset)">Δ (offset)</span><span data-i18n="Action">Action</span></div>
+                      <div class="asset-transform-axis"><label for="assetPositionX">X</label><div class="numeric-slider-cell"><input type="number" id="assetPositionX" step="0.1" /></div><input aria-label="Position X delta" type="number" id="assetPositionDeltaX" step="0.1" value="0" data-i18n-aria-label="Position X delta"><button type="button" class="small-button" id="assetPositionDeltaXButton" data-i18n="Move by Δ">Move by Δ</button></div>
+                      <div class="asset-transform-axis"><label for="assetPositionY">Y</label><div class="numeric-slider-cell"><input type="number" id="assetPositionY" step="0.1" /></div><input aria-label="Position Y delta" type="number" id="assetPositionDeltaY" step="0.1" value="0" data-i18n-aria-label="Position Y delta"><button type="button" class="small-button" id="assetPositionDeltaYButton" data-i18n="Move by Δ">Move by Δ</button></div>
+                      <div class="asset-transform-axis"><label for="assetPositionZ">Z</label><div class="numeric-slider-cell"><input type="number" id="assetPositionZ" step="0.1" /></div><input aria-label="Position Z delta" type="number" id="assetPositionDeltaZ" step="0.1" value="0" data-i18n-aria-label="Position Z delta"><button type="button" class="small-button" id="assetPositionDeltaZButton" data-i18n="Move by Δ">Move by Δ</button></div>
+                    </div>
+                    </div></details><details class="inspector-section"><summary data-i18n="Rotation">Rotation</summary><div class="inspector-section-content"><button id="assetRotationResetButton" type="button" class="small-button" data-i18n="Reset Rotation">Reset Rotation</button>
+                    <p class="rotation-space-hint" data-i18n="Rotation uses Asset Gizmo World / Local axes. Euler angles are display references.">Rotation uses Asset Gizmo World / Local axes. Euler angles are display references.</p>
+                    <div class="asset-transform-grid">
+                      <div class="asset-transform-heading"><span data-i18n="Axis">Axis</span><span data-i18n="Target °">Target °</span><span>Δ °</span><span data-i18n="Action">Action</span></div>
+                      <div class="asset-transform-axis"><label for="assetRotationPitch" data-i18n="Pitch">Pitch</label><div class="numeric-slider-cell"><input type="number" id="assetRotationPitch" step="1" /><input class="asset-axis-slider" aria-label="Pitch slider" id="assetRotationPitchSlider" type="range" min="-180" max="180" step="1" value="0" data-i18n-aria-label="Pitch slider"></div><input aria-label="Pitch delta" type="number" id="assetRotationDeltaPitch" step="1" value="0" data-i18n-aria-label="Pitch delta"><button type="button" class="small-button" id="assetRotationDeltaPitchButton" data-i18n="Rotate by Δ">Rotate by Δ</button></div>
+                      <div class="asset-transform-axis"><label for="assetRotationYaw" data-i18n="Yaw">Yaw</label><div class="numeric-slider-cell"><input type="number" id="assetRotationYaw" step="1" /><input class="asset-axis-slider" aria-label="Yaw slider" id="assetRotationYawSlider" type="range" min="-180" max="180" step="1" value="0" data-i18n-aria-label="Yaw slider"></div><input aria-label="Yaw delta" type="number" id="assetRotationDeltaYaw" step="1" value="0" data-i18n-aria-label="Yaw delta"><button type="button" class="small-button" id="assetRotationDeltaYawButton" data-i18n="Rotate by Δ">Rotate by Δ</button></div>
+                      <div class="asset-transform-axis"><label for="assetRotationRoll" data-i18n="Roll">Roll</label><div class="numeric-slider-cell"><input type="number" id="assetRotationRoll" step="1" /><input class="asset-axis-slider" aria-label="Roll slider" id="assetRotationRollSlider" type="range" min="-180" max="180" step="1" value="0" data-i18n-aria-label="Roll slider"></div><input aria-label="Roll delta" type="number" id="assetRotationDeltaRoll" step="1" value="0" data-i18n-aria-label="Roll delta"><button type="button" class="small-button" id="assetRotationDeltaRollButton" data-i18n="Rotate by Δ">Rotate by Δ</button></div>
+                    </div>
+                    </div></details>
+                    
+                    <details class="inspector-section"><summary data-i18n="Scale">Scale</summary><div class="inspector-section-content"><button id="assetScaleResetButton" type="button" class="small-button" data-i18n="Reset Scale">Reset Scale</button>
+                    <div class="uniform-scale-controls">
+                      <button type="button" class="asset-uniform-toggle ui1f-asset-link" id="assetUniformScaleCheck" aria-pressed="true" aria-label="Unlink scale axes" title="Link / unlink scale axes" data-i18n-title="Link / unlink scale axes" data-i18n-aria-label="Unlink scale axes">
+                        <span aria-hidden="true" class="asset-link-icon">🔗</span><span class="asset-link-label" data-i18n="Linked axes">Linked axes</span>
+                      </button>
+                      <label><span data-i18n="Uniform Scale" data-i18n-space="after">Uniform Scale </span><input type="number" id="assetUniformScaleInput" step="0.01" value="1" min="0.01" aria-label="asset Uniform Scale Input" data-i18n-aria-label="asset Uniform Scale Input"></label>
+                    </div>
+                    <div class="asset-transform-grid">
+                      <div class="asset-transform-heading"><span data-i18n="Axis">Axis</span><span data-i18n="Absolute">Absolute</span><span data-i18n="Δ (multiplier)">Δ (multiplier)</span><span data-i18n="Action">Action</span></div>
+                      <div class="asset-transform-axis"><label for="assetScaleX">X</label><div class="numeric-slider-cell"><input type="number" id="assetScaleX" step="0.01" /><input class="asset-axis-slider" type="range" id="assetScaleXSlider" min="0.01" max="5" step="0.01" value="1" aria-label="Asset scale X slider" data-i18n-aria-label="Asset scale X slider"></div><input aria-label="Scale X multiplier" type="number" id="assetScaleDeltaX" step="0.05" value="1" min="0.01" data-i18n-aria-label="Scale X multiplier"><button type="button" class="small-button" id="assetScaleDeltaXButton" data-i18n="Scale by ×">Scale by ×</button></div>
+                      <div class="asset-transform-axis"><label for="assetScaleY">Y</label><div class="numeric-slider-cell"><input type="number" id="assetScaleY" step="0.01" /><input class="asset-axis-slider" type="range" id="assetScaleYSlider" min="0.01" max="5" step="0.01" value="1" aria-label="Asset scale Y slider" data-i18n-aria-label="Asset scale Y slider"></div><input aria-label="Scale Y multiplier" type="number" id="assetScaleDeltaY" step="0.05" value="1" min="0.01" data-i18n-aria-label="Scale Y multiplier"><button type="button" class="small-button" id="assetScaleDeltaYButton" data-i18n="Scale by ×">Scale by ×</button></div>
+                      <div class="asset-transform-axis"><label for="assetScaleZ">Z</label><div class="numeric-slider-cell"><input type="number" id="assetScaleZ" step="0.01" /><input class="asset-axis-slider" type="range" id="assetScaleZSlider" min="0.01" max="5" step="0.01" value="1" aria-label="Asset scale Z slider" data-i18n-aria-label="Asset scale Z slider"></div><input aria-label="Scale Z multiplier" type="number" id="assetScaleDeltaZ" step="0.05" value="1" min="0.01" data-i18n-aria-label="Scale Z multiplier"><button type="button" class="small-button" id="assetScaleDeltaZButton" data-i18n="Scale by ×">Scale by ×</button></div>
+                    </div>
+                    
+                    <button id="resetAssetTransformButton" data-i18n="Transformをリセット">
+                      Transformをリセット
+                    </button>
+                  </div></details></div></div></div></details></section><section id="workspace-camera" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-camera" data-workspace-panel="camera" hidden><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 04</span><h1 data-i18n="Camera">Camera</h1><p data-i18n="視点・感度・操作設定">視点・感度・操作設定</p></div><details class="inspector-section" open>
+                <summary data-i18n="Camera Navigation">Camera Navigation</summary>
+                <div class="inspector-section-content">
+                  <button id="cameraControlButton" class="camera-toggle-button"><span data-i18n="視点操作" data-i18n-space="after">
+                    視点操作 </span><span id="cameraControlStatus" data-i18n="開始">開始</span>
+                  </button>
+                  <div class="input-group camera-navigation-mode">
+                    <label for="cameraRotationModeSelect" data-i18n="Rotation mode">Rotation mode</label>
+                    <select id="cameraRotationModeSelect"><option value="look" data-i18n="Look (in place)">Look (in place)</option><option value="orbit" data-i18n="Orbit (current slide)">Orbit (current slide)</option></select>
+                  </div>
+                  <details class="inspector-section camera-nav-settings">
+                    <summary data-i18n="Navigation settings">Navigation settings</summary>
+                    <div class="camera-nav-settings-grid">
+                      <label for="cameraRotateSensitivity" data-i18n="Rotate sensitivity">Rotate sensitivity</label><input id="cameraRotateSensitivity" type="range" min="0.1" max="5" step="0.1" value="1"><output id="cameraRotateSensitivityValue" for="cameraRotateSensitivity">1.0×</output>
+                      <label for="cameraKeyboardRotateSensitivity" data-i18n="Keyboard rotation sensitivity">Keyboard rotation sensitivity</label><input id="cameraKeyboardRotateSensitivity" type="range" min="0.1" max="5" step="0.1" value="1"><output id="cameraKeyboardRotateSensitivityValue" for="cameraKeyboardRotateSensitivity">1.0×</output>
+                      <label for="cameraPanSensitivity" data-i18n="Pan sensitivity">Pan sensitivity</label><input id="cameraPanSensitivity" type="range" min="0.1" max="5" step="0.1" value="1"><output id="cameraPanSensitivityValue" for="cameraPanSensitivity">1.0×</output>
+                      <label for="cameraDollySensitivity" data-i18n="Dolly sensitivity">Dolly sensitivity</label><input id="cameraDollySensitivity" type="range" min="0.1" max="5" step="0.1" value="1"><output id="cameraDollySensitivityValue" for="cameraDollySensitivity">1.0×</output>
+                      <label for="cameraWheelSensitivity" data-i18n="Wheel sensitivity">Wheel sensitivity</label><input id="cameraWheelSensitivity" type="range" min="0.1" max="5" step="0.1" value="1"><output id="cameraWheelSensitivityValue" for="cameraWheelSensitivity">1.0×</output>
+                    </div>
+                    <label class="camera-nav-toggle"><input id="cameraInvertX" type="checkbox"><span data-i18n="Invert horizontal rotation">Invert horizontal rotation</span></label><label class="camera-nav-toggle"><input id="cameraInvertDolly" type="checkbox"><span data-i18n="Invert drag dolly">Invert drag dolly</span></label><label class="camera-nav-toggle"><input id="cameraInvertWheel" type="checkbox"><span data-i18n="Invert wheel dolly">Invert wheel dolly</span></label><label class="camera-nav-toggle"><input id="cameraInvertY" type="checkbox"><span data-i18n="Invert vertical rotation">Invert vertical rotation</span></label>
+                    <div class="input-group"><label for="cameraMouseButtons" data-i18n="Mouse button mapping">Mouse button mapping</label>
+                      <select id="cameraMouseButtons"><option value="default" data-i18n="Middle: Pan / Right: Dolly">Middle: Pan / Right: Dolly</option><option value="swapped" data-i18n="Middle: Dolly / Right: Pan">Middle: Dolly / Right: Pan</option></select>
+                    </div>
+                    <button type="button" class="small-button" id="cameraNavigationReset" data-i18n="Reset navigation settings">Reset navigation settings</button>
+                    <p class="workspace-hint" data-i18n="Navigation preferences are saved in this browser, not in the project.">Navigation preferences are saved in this browser, not in the project.</p>
+                  </details>
+                  <details class="inspector-section camera-framing-offset" open>
+                    <summary data-i18n="Framing Offset">Framing Offset</summary>
+                    <div class="inspector-section-content">
+                      <p class="workspace-hint" data-i18n="Shift the composition without changing camera position or rotation. Saved in the project.">Shift the composition without changing camera position or rotation. Saved in the project.</p>
+                      <div class="camera-framing-row"><label for="cameraFramingHorizontal" data-i18n="Horizontal Shift">Horizontal Shift</label><input type="range" id="cameraFramingHorizontal" min="-0.8" max="0.8" step="0.01" value="0"><input type="number" id="cameraFramingHorizontalNumber" min="-0.8" max="0.8" step="0.01" value="0" aria-label="Horizontal Shift value" data-i18n-aria-label="Horizontal Shift value"></div>
+                      <div class="camera-framing-row"><label for="cameraFramingVertical" data-i18n="Vertical Shift">Vertical Shift</label><input type="range" id="cameraFramingVertical" min="-0.8" max="0.8" step="0.01" value="0"><input type="number" id="cameraFramingVerticalNumber" min="-0.8" max="0.8" step="0.01" value="0" aria-label="Vertical Shift value" data-i18n-aria-label="Vertical Shift value"></div>
+                      <button type="button" class="small-button" id="cameraFramingReset" data-i18n="Reset framing offset">Reset framing offset</button>
+                    </div>
+                  </details>
+                  <p class="workspace-hint" data-i18n="Camera gestures: Left drag rotate; middle or Shift+left pan; right drag or wheel dolly.">Camera gestures: Left drag rotate; middle or Shift+left pan; right drag or wheel dolly.</p>
+                  <hr class="camera-speed-separator"/><div class="input-group">
+                    <label for="cameraSpeedSelector" data-i18n="移動単位:">移動単位:&nbsp;</label>
+                    <select id="cameraSpeedSelector">
+                      <option value="0">0</option>
+                      <option value="0.1">0.1</option>
+                      <option value="0.5" selected>0.5</option>
+                      <option value="1">1</option>
+                      <option value="5">5</option>
+                      <option value="10">10</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                      <option value="500">500</option>
+                    </select>
+                  </div>
+                  <hr class="camera-speed-separator"/>
+                  <button id="screenshotButton" class="screenshot-button" data-i18n="スクリーンショット">
+                    スクリーンショット
+                  </button>
+                </div>
+              </details>
+</section><section id="workspace-scene" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-scene" data-workspace-panel="scene" hidden data-history-scope="scene"><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 02</span><h1 data-i18n="Scene &amp; Assets">Scene &amp; Assets</h1><p data-i18n="シーンプリセット・空・素材">シーンプリセット・空・素材</p><div class="workspace-panel-actions" role="group" aria-label="このパネルの項目を開閉" data-i18n-aria-label="このパネルの項目を開閉"><button type="button" class="small-button" data-expand-panel="scene" data-i18n="Expand All">Expand All</button><button type="button" class="small-button" data-collapse-panel="scene" data-i18n="Collapse All">Collapse All</button></div></div><details class="inspector-section" open>
+                  <summary data-i18n="Scene Presets">Scene Presets</summary>
+                  <div class="inspector-section-content">
+                    <div id="legacySingleScenePresetRow" class="inspector-row">
+                      <div class="inspector-row">
+                        <label for="scenePresetSelector" data-i18n="編集するScene Preset">編集するScene Preset</label>
+                        <select id="scenePresetSelector"></select>
+                      </div>
+                    <p class="workspace-hint" data-i18n="ここでは編集するプリセットを選びます。スライドへの割当は Slides → Presets → Scene で行います。表示中のシーンと異なる場合、AssetのGizmoは表示されません。">ここでは編集するプリセットを選びます。スライドへの割当は Slides → Presets → Scene で行います。表示中のシーンと異なる場合、AssetのGizmoは表示されません。</p></div>
+                    <div class="scene-preset-management">
+                      <button id="createScenePresetButton" class="slide-button" data-i18n="新規">
+                        新規
+                      </button>
+                      <button id="duplicateScenePresetButton" class="slide-button" data-i18n="複製">
+                        複製
+                      </button>
+                      <button id="renameScenePresetButton" class="slide-button" data-i18n="名前変更">
+                        名前変更
+                      </button>
+                      <button id="deleteScenePresetButton" class="slide-button" data-i18n="削除">
+                        削除
+                      </button>
+                    </div>
+                    <div id="unusedSceneActions" class="scene-unused-actions" hidden>
+                      <p data-i18n="Unused Scene message">This Scene is not used by any Slide. You can edit it here, or assign it to a Slide.</p>
+                      <div>
+                        <button id="applyUnusedSceneToCurrent" type="button" data-i18n="Apply to Current Slide">Apply to Current Slide</button>
+                        <button id="addSlideForUnusedScene" type="button" data-i18n="Create a new Slide using this Scene">Create a new Slide using this Scene</button>
+                      </div>
+                    </div>
+                    <div class="scene-preview-controls">
+                      <button type="button" id="previewEditingSceneButton" class="slide-button" data-i18n="Preview editing Scene">Preview editing Scene</button>
+                      <p id="scenePreviewStatus" class="workspace-hint" aria-live="polite"></p>
+                      <details class="scene-viewport-guides">
+                        <summary data-i18n="Editor view options">Editor view options</summary>
+                        <label><input type="checkbox" id="hideEditorSlidesCheckbox" /> <span data-i18n="Hide slide images temporarily">Hide slide images temporarily</span></label>
+                        <label><input type="checkbox" id="hideSlideObjectsCheckbox" /> <span data-i18n="Hide Slides (disable selection and editing)">Hide Slides (disable selection and editing)</span></label>
+                        <label><input type="checkbox" id="showAllScenesCheckbox" /> <span data-i18n="Show Assets from all Scenes">Show Assets from all Scenes</span></label>
+                        <p class="workspace-hint" data-i18n="All Scenes editor view hint">Shows assets from every Scene while keeping the Current Scene environment. Click an asset to edit its Scene. Select assets across Scenes with Ctrl-click to transform them together.</p>
+                        <label><input type="checkbox" id="hideSceneAssetsCheckbox" /> <span data-i18n="Hide Assets (disable selection and editing)">Hide Assets (disable selection and editing)</span></label>
+                        <div class="scene2o-hidden-actions">
+                          <button type="button" id="scene2oHideSelectedButton" data-i18n="Hide selected objects temporarily">Hide selected objects temporarily</button>
+                          <button type="button" id="scene2oRestoreHiddenButton" data-i18n="Show all temporarily hidden objects">Show all temporarily hidden objects</button>
+                        </div>
+                        <p id="scene2oHiddenStatus" class="workspace-hint" aria-live="polite"></p>
+                        <div class="scene2o-hidden-actions"><button type="button" id="scene2qClearSelectionButton" data-i18n="Clear selection (keep Current)">Clear selection (keep Current)</button></div>
+                        <p class="workspace-hint" data-i18n="Current and selection are independent">Current controls the displayed Scene. Selection controls editing targets. Ctrl-click toggles selection without changing Current. Alt-click a thumbnail to change Current only.</p>
+                        <label><input type="checkbox" id="showSlidePositionsCheckbox" /> <span data-i18n="Show slide positions">Show slide positions</span></label>
+                        <label><input type="checkbox" id="showCameraPositionsCheckbox" /> <span data-i18n="Show camera positions">Show camera positions</span></label>
+                        <label><input type="checkbox" id="showCameraPathCheckbox" /> <span data-i18n="Show camera path">Show camera path</span></label>
+                        <label><input type="checkbox" id="showSelectionHighlightsCheckbox" checked /> <span data-i18n="Highlight selected objects">Highlight selected objects</span></label>
+                      </details>
+                    </div>
+                  </div>
+                  
+                </details>
+<details class="inspector-section" open>
+                <summary data-i18n="Scene Assets">Scene Assets</summary>
+                <div class="inspector-section-content">
+                  <p class="inspector-hint" data-i18n="Scene Assets description registered">Choose a registered Asset Library item to place in this Scene. Manage files in Project.</p><div class="asset-management-controls library-management-actions">
+                    <select id="projectAssetFileSelector" aria-label="Available asset file to add" data-i18n-aria-label="Available asset file to add"></select>
+                    <div class="scene4b-placement-control">
+                      <label for="sceneAssetPlacementSelect" data-i18n="Asset placement">Asset placement</label>
+                      <select id="sceneAssetPlacementSelect" aria-label="Asset placement" data-i18n-aria-label="Asset placement">
+                        <option value="camera" selected data-i18n="In front of camera">In front of camera</option>
+                        <option value="origin" data-i18n="World origin (0, 0, 0)">World origin (0, 0, 0)</option>
+                      </select>
+                    </div>
+                    <div class="scene4c-placement-distance"><label for="sceneAssetPlacementDistance" data-i18n="Distance from camera">Distance from camera</label><input id="sceneAssetPlacementDistance" type="number" value="2" min="0.1" max="10000" step="0.1" /></div>
+                    <button id="addSceneAssetButton" type="button" class="scene4c-wide-button" data-i18n="＋追加">＋追加</button>
+                  </div>
+                  <div class="scene-placed-assets">
+                    <label for="scenePlacedAssetSelector" data-i18n="Placed assets in editing Scene Preset">Placed assets in editing Scene Preset</label>
+                    <select id="scenePlacedAssetSelector" aria-label="Select a placed Scene Asset" data-i18n-aria-label="Select a placed Scene Asset"></select>
+                    <div class="ui1e-placed-asset-actions">
+                      <button id="duplicateSceneAssetButton" data-i18n="複製">複製</button>
+                      <button id="deleteSceneAssetButton" data-i18n="削除">削除</button>
+                      <button id="scene4cClearAssetSelection" type="button" class="small-button" data-i18n="Clear Asset selection">Clear Asset selection</button>
+                    </div>
+                    <!-- Inspector copy/paste controls retired; retain hidden DOM adapters for older bindings. -->
+                    <div hidden style="display:none" aria-hidden="true">
+                      <button id="copySelectedAssetsButton" type="button" tabindex="-1">Copy selected Assets</button>
+                      <button id="pasteSelectedAssetsButton" type="button" tabindex="-1">Paste Assets</button>
+                    </div>
+                    <div class="scene2l-offset-controls">
+                      <span data-i18n="Asset copy offset (XYZ)">Asset copy offset (XYZ)</span>
+                      <label>X <input id="assetCopyOffsetX" type="number" value="1" step="0.1" /></label>
+                      <label>Y <input id="assetCopyOffsetY" type="number" value="0" step="0.1" /></label>
+                      <label>Z <input id="assetCopyOffsetZ" type="number" value="0" step="0.1" /></label>
+                    </div>
+                    <p id="scene2lAssetClipboardStatus" class="workspace-hint" aria-live="polite"></p>
+                    <p id="scenePlacedAssetInfo" class="workspace-hint" data-i18n="Select an asset here to duplicate, delete, or edit its Transform.">Select an asset here to duplicate, delete, or edit its Transform.</p>
+                  </div>
+                  <div id="sceneAssetEmptyMessage" data-i18n="Assetがありません">Assetがありません</div>
+                </div>
+              <div class="card-footer-action"><button type="button" class="workspace-link" data-workspace-link="transform" data-transform-target="asset" data-i18n="選択AssetのTransformを編集 →">選択AssetのTransformを編集 →</button></div></details>
+<details class="inspector-section">
+                <summary data-i18n="Scene Environment">Scene Environment</summary>
+                <div class="inspector-section-content">
+                  <div class="environment-editor-explainer"><p data-i18n="Scene environment settings">Edit the shared Environment for the selected Scene Preset.</p></div>
+                    <div hidden><label for="environmentSlideOverrideCheckbox"><input type="checkbox" id="environmentSlideOverrideCheckbox" />Slide Override (legacy editor target)</label><p id="environmentOverrideEditorHint"></p></div>
+                    <div class="environment-edit-target" hidden>
+                      <span data-i18n="Environment edit target">Environment edit target</span>
+                      <button id="editEnvironmentPresetButton" class="environment-target-button active" data-i18n="Scene Preset (shared)">
+                        Scene Preset (shared)
+                      </button>
+                      <button
+                        id="editEnvironmentOverrideButton"
+                        class="environment-target-button" data-i18n="Slide Environment Override"
+                      >
+                        Slide Environment Override
+                      </button>
+                    </div>
+                    <div class="inspector-row" hidden>
+                      <span data-i18n="Environment Override">Environment Override</span>
+                      <span id="environmentOverrideStatus" data-i18n="なし" data-i18n-space="after"> なし </span>
+                      <button id="clearEnvironmentOverrideButton" class="slide-button" data-i18n="解除">
+                        解除
+                      </button>
+                    </div>
+                  <div id="sceneEnvironmentEditorHome"><div id="sharedEnvironmentEditor">
+                  <div class="sky-mode-heading"><strong data-i18n="Sky Mode">Sky Mode</strong><div class="sky-mode-buttons"><button type="button" id="skyModeProceduralButton" class="slide-button" data-i18n="Procedural Sky">Procedural Sky</button><button type="button" id="skyModeSkyboxButton" class="slide-button" data-i18n="Skybox">Skybox</button></div></div>
+                  <div id="proceduralSkySettings"><p data-i18n="Procedural Sky settings">Procedural Sky settings</p>
+                  <div>
+                    <label for="turbiditySlider" class="slider-label"><span data-i18n="濁度 =" data-i18n-space="after">
+                      濁度 =
+                      </span><span id="turbidityValue">10</span></label>
+                    <input
+                      id="turbiditySlider"
+                      type="range"
+                      min="0"
+                      max="200"
+                      step="1"
+                      value="10"
+                    />
+                  </div>
+                  <div>
+                    <label for="inclinationSlider" class="slider-label"><span data-i18n="傾斜角 =" data-i18n-space="after">
+                      傾斜角 =
+                      </span><span id="inclinationValue">0</span></label>
+                    <input
+                      id="inclinationSlider"
+                      type="range"
+                      min="-0.5"
+                      max="0.5"
+                      step="0.01"
+                      value="0"
+                    />
+                  </div>
+                  <div>
+                    <label for="azimuthSlider" class="slider-label"><span data-i18n="方位角 =" data-i18n-space="after">
+                      方位角 =
+                      </span><span id="azimuthValue">0.5</span></label>
+                    <input
+                      id="azimuthSlider"
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value="0.5"
+                    />
+                  </div>
+                  </div>
+                  <div class="environment-fog-settings"><p data-i18n="Fog">Fog</p>
+                  <div>
+                    <label for="fogDensitySlider" class="slider-label"><span data-i18n="フォグ濃度 =" data-i18n-space="after">
+                      フォグ濃度 =
+                      </span><span id="fogDensityValue">0.002</span></label>
+                    <input
+                      id="fogDensitySlider"
+                      type="range"
+                      min="0"
+                      max="0.05"
+                      step="0.0002"
+                      value="0.002"
+                    />
+                  </div>
+                  <div class="picker-container">
+                    <label for="fogColorPicker" class="picker-label" data-i18n="フォグの色">
+                      フォグの色
+                    </label>
+                    <input type="color" id="fogColorPicker" value="#CCCCCC" />
+                  </div>
+                  </div>
+                  <div id="skyboxModeSettings"><p data-i18n="Skybox settings">Skybox settings</p>
+                  <div class="inspector-row">
+                    <label for="skyboxSetSelector" data-i18n="Skybox Set"> Skybox Set </label>
+                    <select id="skyboxSetSelector"></select>
+                    <!-- Kept hidden only for legacy DOM-contract compatibility;
+                         scanning is handled by Skybox Library Manager. -->
+                    <button id="refreshSkyboxSetsButton" type="button" hidden disabled style="display:none" aria-hidden="true" tabindex="-1">更新</button>
+                  </div>
+                  <div class="skybox-paths">
+                    <div>
+                      px:
+                      <span id="skyboxPathPx">-</span>
+                    </div>
+                    <div>
+                      py:
+                      <span id="skyboxPathPy">-</span>
+                    </div>
+                    <div>
+                      pz:
+                      <span id="skyboxPathPz">-</span>
+                    </div>
+                    <div>
+                      nx:
+                      <span id="skyboxPathNx">-</span>
+                    </div>
+                    <div>
+                      ny:
+                      <span id="skyboxPathNy">-</span>
+                    </div>
+                    <div>
+                      nz:
+                      <span id="skyboxPathNz">-</span>
+                    </div>
+                  </div>
+                  <div id="skyboxEditorStatus"></div>
+                  </div>
+</div></div>
+
+                </div>
+              </details>
+                  <details class="inspector-section atmosphere-effects-card" id="atmosphereEffectsCard" open>
+                    <summary data-i18n="Scene Atmosphere Effects">Scene Atmosphere Effects</summary>
+                    <div class="inspector-section-content">
+                      <p class="workspace-hint" data-i18n="Scene Atmosphere Effects help">Particles for the Scene Preset being edited; playback follows the active Scene.</p>
+                      <div class="input-group">
+                        <label for="atmospherePreset" data-i18n="Atmosphere preset">Effect preset</label>
+                        <select id="atmospherePreset">
+                          <option value="off" data-i18n="Atmosphere Off">Off</option>
+                          <option value="dust" data-i18n="Atmosphere Dust">Dust</option>
+                          <option value="sparkles" data-i18n="Atmosphere Sparkles">Sparkles</option>
+                          <option value="rain" data-i18n="Atmosphere Rain">Rain</option>
+                          <option value="snow" data-i18n="Atmosphere Snow">Snow</option>
+                          <option value="diamond-dust" data-i18n="Atmosphere Diamond Dust">Diamond Dust</option>
+                          <option value="fireflies" data-i18n="Atmosphere Fireflies">Fireflies</option>
+                          <option value="cosmic" data-i18n="Atmosphere Cosmic">Cosmic Field</option>
+                          <option value="bubbles" data-i18n="Atmosphere Bubbles">Bubbles</option><option value="rising-bands" data-i18n="Atmosphere Rising Bands">Rising Bands</option><option value="rising-bands-mix" data-i18n="Atmosphere Rising Bands Mix">Rising Bands (Mixed)</option>
+                        </select>
+                      </div>
+                      <div class="atmosphere-sliders">
+                        <div class="input-group"><label for="atmosphereDensity" data-i18n="Atmosphere density">Density</label><div class="atmosphere-range"><input type="range" id="atmosphereDensity" min="0" max="200" step="0.1" value="55"><input type="number" id="atmosphereDensityNumber" min="0" max="200" step="0.1" value="55" inputmode="decimal" aria-label="Density numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereSize" data-i18n="Atmosphere size">Size</label><div class="atmosphere-range"><input type="range" id="atmosphereSize" min="0" max="200" step="0.1" value="55"><input type="number" id="atmosphereSizeNumber" min="0" max="200" step="0.1" value="55" inputmode="decimal" aria-label="Size numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereSpeed" data-i18n="Atmosphere speed">Speed</label><div class="atmosphere-range"><input type="range" id="atmosphereSpeed" min="0" max="200" step="0.1" value="55"><input type="number" id="atmosphereSpeedNumber" min="0" max="200" step="0.1" value="55" inputmode="decimal" aria-label="Speed numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereWind" data-i18n="Atmosphere wind">Wind strength</label><div class="atmosphere-range"><input type="range" id="atmosphereWind" min="0" max="200" step="0.1" value="0"><input type="number" id="atmosphereWindNumber" min="0" max="200" step="0.1" value="0" inputmode="decimal" aria-label="Wind numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereWindDirection" data-i18n="Atmosphere wind direction">Wind direction (°)</label><div class="atmosphere-range"><input type="range" id="atmosphereWindDirection" min="0" max="360" step="0.1" value="90"><input type="number" id="atmosphereWindDirectionNumber" min="0" max="360" step="0.1" value="90" inputmode="decimal" aria-label="WindDirection numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereDistance" data-i18n="Atmosphere distance">Distance</label><div class="atmosphere-range"><input type="range" id="atmosphereDistance" min="0" max="200" step="0.1" value="85"><input type="number" id="atmosphereDistanceNumber" min="0" max="200" step="0.1" value="85" inputmode="decimal" aria-label="Distance numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereForegroundRatio" data-i18n="Atmosphere foreground ratio">Foreground ratio</label><div class="atmosphere-range"><input type="range" id="atmosphereForegroundRatio" min="0" max="100" step="0.1" value="35"><input type="number" id="atmosphereForegroundRatioNumber" min="0" max="100" step="0.1" value="35" inputmode="decimal" aria-label="ForegroundRatio numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereForegroundSize" data-i18n="Atmosphere foreground size">Foreground size</label><div class="atmosphere-range"><input type="range" id="atmosphereForegroundSize" min="0" max="100" step="0.1" value="72"><input type="number" id="atmosphereForegroundSizeNumber" min="0" max="100" step="0.1" value="72" inputmode="decimal" aria-label="ForegroundSize numeric value"></div></div>
+                        <div class="input-group"><label for="atmosphereForegroundSpeed" data-i18n="Atmosphere foreground speed">Foreground speed</label><div class="atmosphere-range"><input type="range" id="atmosphereForegroundSpeed" min="0" max="100" step="0.1" value="65"><input type="number" id="atmosphereForegroundSpeedNumber" min="0" max="100" step="0.1" value="65" inputmode="decimal" aria-label="ForegroundSpeed numeric value"></div></div>
+                        <div class="atmosphere-particles-heading" data-i18n="Atmosphere particles">Particle variants (weights are relative)</div>
+                        <div class="input-group"><label for="atmosphereParticleCount" data-i18n="Atmosphere particle count">Number of particle variants</label><select id="atmosphereParticleCount"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+                        <div class="atmosphere-particles-columns" aria-hidden="true"><span data-i18n="Atmosphere particle column">粒子</span><span data-i18n="Atmosphere color column">色</span><span data-i18n="Atmosphere shape column">形</span><span data-i18n="Atmosphere weight column">比率</span></div>
+                        <div class="atmosphere-particles" id="atmosphereParticles">
+                          <div class="atmosphere-particle-row" id="atmosphereParticleRow1">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 1">Particle 1</span>
+                            <input type="color" id="atmosphereParticle1Color" value="#ffffff" aria-label="Particle 1 color">
+                            <select id="atmosphereParticle1Shape" aria-label="Particle 1 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="atmosphereParticle1Weight" min="0" max="100" step="0.1" value="50" inputmode="decimal" aria-label="Particle 1 weight">
+                          </div>
+                          <div class="atmosphere-particle-row" id="atmosphereParticleRow2">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 2">Particle 2</span>
+                            <input type="color" id="atmosphereParticle2Color" value="#ffffff" aria-label="Particle 2 color">
+                            <select id="atmosphereParticle2Shape" aria-label="Particle 2 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="atmosphereParticle2Weight" min="0" max="100" step="0.1" value="50" inputmode="decimal" aria-label="Particle 2 weight">
+                          </div>
+                          <div class="atmosphere-particle-row" id="atmosphereParticleRow3">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 3">Particle 3</span>
+                            <input type="color" id="atmosphereParticle3Color" value="#ffffff" aria-label="Particle 3 color">
+                            <select id="atmosphereParticle3Shape" aria-label="Particle 3 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="atmosphereParticle3Weight" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-label="Particle 3 weight">
+                          </div>
+                          <div class="atmosphere-particle-row" id="atmosphereParticleRow4">
+                            <span class="atmosphere-particle-name" data-i18n="Atmosphere particle 4">Particle 4</span>
+                            <input type="color" id="atmosphereParticle4Color" value="#ffffff" aria-label="Particle 4 color">
+                            <select id="atmosphereParticle4Shape" aria-label="Particle 4 shape"><option value="soft-circle" data-i18n="Atmosphere shape soft circle">Soft circle</option><option value="triangle" data-i18n="Atmosphere shape triangle">Triangle</option><option value="square" data-i18n="Atmosphere shape square">Square</option><option value="hexagon" data-i18n="Atmosphere shape hexagon">Hexagon</option><option value="star" data-i18n="Atmosphere shape star">Star</option><option value="ring" data-i18n="Atmosphere shape ring">Ring</option><option value="inner-fade-circle" data-i18n="Atmosphere shape inner fade circle">Inner-fade circle</option><option value="diamond" data-i18n="Atmosphere shape diamond">Diamond</option><option value="streak" data-i18n="Atmosphere shape streak">Streak</option></select>
+                            <input type="number" id="atmosphereParticle4Weight" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-label="Particle 4 weight">
+                          </div>
+                        </div>
+                        <p class="workspace-hint" data-i18n="Atmosphere particle weights help">Weights are normalized automatically; 0 hides a variant.</p>
+                      </div>
+                    </div>
+                  </details>
+<details class="inspector-section workspace-foldable" open><summary data-i18n="Scene Transition">Scene Transition</summary><div class="inspector-section-content">
+<div class="inspector-row"><label for="sceneTransitionMode" data-i18n="Setting source">Setting source</label><select id="sceneTransitionMode"><option value="preset" data-i18n="Shared preset">Shared preset</option><option value="custom" data-i18n="Scene-specific settings">Scene-specific settings</option></select></div>
+<div id="sceneTransitionPresetRow" class="inspector-row"><label for="sceneTransitionPreset" data-i18n="Scene Transition Preset">Scene Transition Preset</label><select id="sceneTransitionPreset"></select></div>
+<details id="sceneTransitionCustomDetails" class="scene-local-settings"><summary data-i18n="Scene-specific transition">Scene-specific transition</summary>
+<div class="inspector-row"><label for="sceneCustomTransitionTimingMode" data-i18n="Transition timing">Transition timing</label><select id="sceneCustomTransitionTimingMode"><option value="speed" data-i18n="Speed">Speed</option><option value="duration" data-i18n="Duration">Duration</option></select></div>
+<div id="sceneTransitionSpeedFields">
+<div class="inspector-row"><label for="sceneCustomPreviousSpeed" data-i18n="Previous Speed">Previous Speed</label><input id="sceneCustomPreviousSpeed" type="number" min="0" max="10" step="0.01" /></div>
+<div class="inspector-row"><label for="sceneCustomCurrentSpeed" data-i18n="Current Speed">Current Speed</label><input id="sceneCustomCurrentSpeed" type="number" min="0" max="10" step="0.01" /></div>
+<div class="inspector-row"><label for="sceneCustomNextSpeed" data-i18n="Next Speed">Next Speed</label><input id="sceneCustomNextSpeed" type="number" min="0" max="10" step="0.01" /></div></div>
+<div id="sceneTransitionDurationFields" hidden>
+<div class="inspector-row"><label for="sceneCustomPreviousDuration" data-i18n="Previous Duration (s)">Previous Duration (s)</label><input id="sceneCustomPreviousDuration" type="number" min="0" max="120" step="0.1" /></div>
+<div class="inspector-row"><label for="sceneCustomCurrentDuration" data-i18n="Current Duration (s)">Current Duration (s)</label><input id="sceneCustomCurrentDuration" type="number" min="0" max="120" step="0.1" /></div>
+<div class="inspector-row"><label for="sceneCustomNextDuration" data-i18n="Next Duration (s)">Next Duration (s)</label><input id="sceneCustomNextDuration" type="number" min="0" max="120" step="0.1" /></div></div></details>
+</div></details>
+<details class="inspector-section workspace-foldable" open><summary data-i18n="Scene Sound">Scene Sound</summary><div class="inspector-section-content">
+<div class="inspector-row"><label for="sceneSoundMode" data-i18n="Setting source">Setting source</label><select id="sceneSoundMode"><option value="preset" data-i18n="Shared preset">Shared preset</option><option value="custom" data-i18n="Scene-specific settings">Scene-specific settings</option></select></div>
+<div id="sceneSoundPresetRow" class="inspector-row"><label for="sceneSoundPreset" data-i18n="Scene SFX Preset">Scene SFX Preset</label><select id="sceneSoundPreset"></select></div>
+<details id="sceneSoundCustomDetails" class="scene-local-settings"><summary data-i18n="Scene-specific sound">Scene-specific sound</summary>
+<div class="inspector-row"><label for="sceneCustomPreviousSound" data-i18n="Previous">Previous</label><select id="sceneCustomPreviousSound"></select></div>
+<div class="inspector-row"><label for="sceneCustomCurrentSound" data-i18n="Current">Current</label><select id="sceneCustomCurrentSound"></select></div>
+<div class="inspector-row"><label for="sceneCustomNextSound" data-i18n="Next">Next</label><select id="sceneCustomNextSound"></select></div></details>
+</div></details>
+<details class="inspector-section workspace-foldable" open><summary data-i18n="Scene BGM">Scene BGM</summary><div class="inspector-section-content"><p id="scenePresetBgmFallbackNote" class="inspector-hint" data-i18n="Scene BGM scene-only explanation">Configure BGM for this scene. Slides may override it.</p>
+                    <label class="scene3y-compatibility-only">
+                      <input id="scenePresetBgmUseOverride" type="checkbox" /><span data-i18n="Use Scene BGM" data-i18n-space="after">
+                      Use Scene BGM
+                    </span></label>
+                    <div class="inspector-row">
+                      <label for="scenePresetBgmEnabled" data-i18n="Enabled"> Enabled </label>
+                      <input id="scenePresetBgmEnabled" type="checkbox" />
+                    </div>
+                    <div class="inspector-row">
+                      <label for="scenePresetBgmSound" data-i18n="Audio track"> Audio track </label>
+                      <select id="scenePresetBgmSound"></select>
+                    </div>
+                    <div class="inspector-row">
+                      <label for="scenePresetBgmVolume" data-i18n="Volume"> Volume </label>
+                      <div class="bgm-volume-editor">
+                        <input id="scenePresetBgmVolume" type="number" min="0" max="1" step="0.05" />
+                        <input id="scenePresetBgmVolumeSlider" type="range" min="0" max="1" step="0.01" aria-label="Scene Preset BGM volume slider" data-i18n-aria-label="Scene Preset BGM volume slider">
+                      </div>
+                    </div>
+                    <div class="inspector-row">
+                      <label for="scenePresetBgmLoop" data-i18n="Loop"> Loop </label>
+                      <input id="scenePresetBgmLoop" type="checkbox" />
+                    </div>
+<div class="inspector-row"><label for="sceneBgmFadeIn" data-i18n="Scene BGM Fade-in (s)">Scene BGM Fade-in (s)</label><input id="sceneBgmFadeIn" type="number" min="0" max="10" step="0.1" /></div>
+<div class="inspector-row"><label for="sceneBgmFadeOut" data-i18n="Scene BGM Fade-out (s)">Scene BGM Fade-out (s)</label><input id="sceneBgmFadeOut" type="number" min="0" max="10" step="0.1" /></div>
+<label><input id="sceneBgmContinueSame" type="checkbox" checked /><span data-i18n="Continue same BGM across scenes"> Continue same BGM across scenes</span></label>
+<p class="inspector-hint" data-i18n="Scene timing rollout note">Scene fade timings are saved now; playback migration will be completed in Scene-1B.</p>
+
+                    <div class="multi-transform-camera-actions">
+                      <button id="scenePresetBgmClearButton" class="small-button secondary-button" type="button" data-i18n="Clear">
+                        Clear
+                      </button>
+                    </div>
+                    <div
+                      id="scenePresetBgmEffective"
+                      class="project-bgm-status"
+                    ></div>
+                  </div></details></section><section id="workspace-presentation" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-presentation" data-workspace-panel="presentation" hidden><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 06</span><h1 data-i18n="Presentation">Presentation</h1><p data-i18n="発表時の動作">発表時の動作</p><div class="workspace-panel-actions" role="group" aria-label="このパネルの項目を開閉" data-i18n-aria-label="このパネルの項目を開閉"><button type="button" class="small-button" data-expand-panel="presentation" data-i18n="Expand All">Expand All</button><button type="button" class="small-button" data-collapse-panel="presentation" data-i18n="Collapse All">Collapse All</button></div></div><details class="inspector-section" open><summary data-i18n="Presentation Options">Presentation Options</summary><div class="inspector-section-content">
+              
+              <div class="property-row">
+                <label for="presentationStartMode" data-i18n="Start"> Start </label>
+                <select id="presentationStartMode">
+                  <option value="current" data-i18n="Current Slide">Current Slide</option>
+                  <option value="first" data-i18n="First Slide">First Slide</option>
+                </select>
+              </div>
+              <div class="property-row">
+                <label for="presentationLoop" data-i18n="Loop"> Loop </label>
+                <input id="presentationLoop" type="checkbox" checked />
+              </div>
+              <div class="property-row">
+                <label for="presentationAutoFullscreen" data-i18n="Auto Fullscreen">
+                  Auto Fullscreen
+                </label>
+                <input id="presentationAutoFullscreen" type="checkbox" />
+              </div>
+              <div class="property-row">
+                <label for="presentationHudMode" data-i18n="HUD"> HUD </label>
+                <select id="presentationHudMode">
+                  <option value="auto-dim" data-i18n="Auto Dim">Auto Dim</option>
+                  <option value="bar-linked" data-i18n="HUD follows controls">HUD follows controls</option>
+                  <option value="always" data-i18n="Always">Always</option>
+                  <option value="off" data-i18n="Off">Off</option>
+                </select>
+              </div>
+              <div class="property-row">
+                <label for="presentationTimeMode" data-i18n="HUD Time"> HUD Time </label>
+                <select id="presentationTimeMode">
+                  <option value="elapsed" data-i18n="Elapsed">Elapsed</option>
+                  <option value="clock" data-i18n="Clock">Clock</option>
+                  <option value="off" data-i18n="Off">Off</option>
+                </select>
+              </div>
+              <div class="inspector-field-row">
+                <label for="presentationAutoPlayOnStart" data-i18n="Autoplay"> Autoplay </label>
+                <input id="presentationAutoPlayOnStart" type="checkbox" />
+              </div>
+              <div class="inspector-field-row">
+                <label for="presentationAutoPlayInterval" data-i18n="Interval"> Interval </label>
+                
+                
+              <div class="number-with-unit"><input
+                  id="presentationAutoPlayInterval"
+                  type="number"
+                  min="1"
+                  max="3600"
+                  step="0.5"
+                  value="8"
+                /><span data-i18n="sec">sec</span></div></div>
+            </div></details>
+</section><section id="workspace-drawing" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-drawing" data-workspace-panel="drawing" hidden><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 05</span><h1 data-i18n="Drawing">Drawing</h1><p data-i18n="発表に使う描画の設定">発表に使う描画の設定</p><div class="workspace-panel-actions" role="group" aria-label="このパネルの項目を開閉" data-i18n-aria-label="このパネルの項目を開閉"><button type="button" class="small-button" data-expand-panel="drawing" data-i18n="Expand All">Expand All</button><button type="button" class="small-button" data-collapse-panel="drawing" data-i18n="Collapse All">Collapse All</button></div></div><details class="inspector-section" open>
+                <summary data-i18n="Drawing">Drawing</summary>
+                <div class="inspector-section-content"><button id="drawingButton" class="drawing-toggle-button"><span data-i18n="お絵描き" data-i18n-space="after">
+                    お絵描き </span><span id="drawingStatus" data-i18n="開始">開始</span>
+                  </button>
+<label class="slide-drawing-target"><span data-i18n="描画先">描画先</span><select id="drawingTargetSelect"><option value="screen" data-i18n="画面上（従来）">画面上（従来）</option><option value="slide" selected data-i18n="スライド表面">スライド表面</option></select></label><p class="workspace-hint" data-i18n="発表前に色・太さ・ネオン残存時間を調整できます。発表中は B：通常線、V：ネオン線、M：全消去。">発表前に色・太さ・ネオン残存時間を調整できます。発表中は B：通常線、V：ネオン線、M：全消去。</p>
+                  <div class="drawing-edit-tools">
+  <span class="inspector-field-label" data-i18n="描画ツール">描画ツール</span>
+  <div class="drawing-tool-quick" role="group" aria-label="描画ツール" data-i18n-aria-label="描画ツール">
+    <button type="button" class="drawing-tool-quick-button is-active" data-tool="brush" aria-pressed="true" title="ペン" data-i18n-title="ペン">✎ <span data-i18n="ペン">ペン</span></button>
+    <button type="button" class="drawing-tool-quick-button" data-tool="select" aria-pressed="false" title="線を選択" data-i18n-title="線を選択">▧ <span data-i18n="線を選択">線を選択</span></button>
+    <button type="button" class="drawing-tool-quick-button" data-tool="eraser" aria-pressed="false" title="消しゴム" data-i18n-title="消しゴム">⌫ <span data-i18n="消しゴム">消しゴム</span></button>
+  </div>
+  <label class="drawing-eraser-mode"><span data-i18n="消しゴム方式">消しゴム方式</span>
+    <select id="drawingEraserMode"><option value="partial" data-i18n="部分消去" selected>部分消去</option><option value="stroke" data-i18n="線全体">線全体</option></select>
+  </label>
+  <p class="workspace-hint" data-i18n="Ctrl+クリックで複数の線を選択">Ctrl+クリックで複数の線を選択</p>
+  <div class="drawing-selected-actions" id="drawingSelectedActions">
+  <button type="button" id="drawingDeselectSelected" disabled data-i18n="選択解除">選択解除</button>
+  <button type="button" id="drawingApplySelected" disabled data-i18n="選択線に色と太さを適用">選択線に色と太さを適用</button>
+  <div class="drawing-clipboard-actions"><button type="button" id="drawingCopyStrokes" disabled data-i18n="選択線をコピー">選択線をコピー</button><button type="button" id="drawingPasteStrokes" disabled data-i18n="線を貼り付け">線を貼り付け</button></div>
+  <label class="drawing-drag-transform-label" hidden aria-hidden="true"><span data-i18n="選択線のドラッグ操作">選択線のドラッグ操作</span>
+    <select id="drawingDragMode"><option value="move" data-i18n="移動">移動</option><option value="rotate" data-i18n="回転">回転</option><option value="scale" data-i18n="拡大縮小">拡大縮小</option></select>
+  </label>
+  <div class="drawing-transform-actions" hidden aria-hidden="true">
+    <label><span data-i18n="回転角度 (度)">回転角度 (度)</span><input id="drawingStrokeAngle" type="number" value="15" step="1" min="-360" max="360" /></label>
+    <button type="button" id="drawingRotateStrokes" disabled data-i18n="選択線を回転">選択線を回転</button>
+    <label><span data-i18n="拡大率">拡大率</span><input id="drawingStrokeScale" type="number" value="1.2" step="0.05" min="0.05" max="10" /></label>
+    <button type="button" id="drawingScaleStrokes" disabled data-i18n="選択線を拡大縮小">選択線を拡大縮小</button>
+  </div>
+  <button type="button" id="drawingDeleteSelected" disabled data-i18n="選択線を削除">選択線を削除</button>
+  </div>
+  <span id="drawingSelectedStatus" role="status" data-i18n="線が選択されていません">線が選択されていません</span>
+</div>
+
+                  <div class="layer-toggle-container">
+                    <span class="layer-toggle-label" data-i18n="レイヤー:">レイヤー:</span>
+                    <div class="switch-wrapper">
+                      <input type="checkbox" id="layerSwitch" checked />
+                      <label
+                        for="layerSwitch"
+                        class="switch-track"
+                        id="layerSwitchLabel"
+                      >
+                        <span class="layer-label standard-drawing-label" data-i18n="通常">通常</span>
+                        <span class="layer-label neon-drawing-label" data-i18n="ネオン">ネオン</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="color-select">
+                    <span class="label" data-i18n="線の色:">線の色:</span>
+                    <div
+                      class="color-option selected"
+                      data-color="rgba(255, 0, 0, 1)"
+                      style="background-color: #ff0000"
+                    ></div>
+                    <div
+                      class="color-option"
+                      data-color="rgba(0, 128, 255, 1)"
+                      style="background-color: #0080ff"
+                    ></div>
+                    <div
+                      class="color-option"
+                      data-color="rgba(0, 255, 0, 1)"
+                      style="background-color: #00ff00"
+                    ></div>
+                    <div
+                      class="color-option"
+                      data-color="rgba(255, 255, 0, 1)"
+                      style="background-color: #ffff00"
+                    ></div>
+                    <div
+                      class="color-option"
+                      data-color="rgba(0, 0, 0, 1)"
+                      style="background-color: #000000"
+                    ></div>
+                  </div>
+                  
+                  <div class="drawing-opacity-control"><label for="drawingPenOpacity" data-i18n="ペンの不透明度">ペンの不透明度</label><input id="drawingPenOpacity" type="range" min="5" max="100" step="5" value="100"><output id="drawingPenOpacityValue" for="drawingPenOpacity">100%</output></div>
+                  <details class="drawing-advanced-group"><summary data-i18n="Customize colors">Customize colors</summary><div class="drawing-palette-edit"><label for="drawingPaletteSlot" data-i18n="パレットの色を変更">パレットの色を変更</label><select id="drawingPaletteSlot" aria-label="Palette slot"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option><option value="4">5</option></select><input id="drawingPaletteColor" type="color" value="#ff0000" aria-label="パレットの編集色" data-i18n-aria-label="パレットの編集色" /><button type="button" id="drawingPaletteApply" data-i18n="パレットに適用">パレットに適用</button><button type="button" id="drawingPaletteUndo" data-i18n="色変更を戻す" disabled>色変更を戻す</button><button type="button" id="drawingPaletteRedo" data-i18n="色変更をやり直す" disabled>色変更をやり直す</button><button type="button" id="drawingPaletteReset" data-i18n="パレットを初期化">パレットを初期化</button></div></details><div class="line-width-select">
+                    <span class="label" data-i18n="線の太さ:">線の太さ:</span>
+                    <div class="line-width-option selected" data-width="3">
+                      <div
+                        class="line-width-indicator"
+                        style="width: 10px; height: 10px"
+                      ></div>
+                    </div>
+                    <div class="line-width-option" data-width="9">
+                      <div
+                        class="line-width-indicator"
+                        style="width: 15px; height: 15px"
+                      ></div>
+                    </div>
+                    <div class="line-width-option" data-width="15">
+                      <div
+                        class="line-width-indicator"
+                        style="width: 20px; height: 20px"
+                      ></div>
+                    </div>
+                  </div>
+                  <details class="drawing-advanced-group"><summary data-i18n="Customize stroke widths">Customize stroke widths</summary><div class="drawing-width-presets" role="group" aria-label="線幅の3段階設定"><label><span data-i18n="細い">細い</span><input type="number" id="drawingWidthPreset0" min="1" max="12" step="1" value="3"></label><label><span data-i18n="中">中</span><input type="number" id="drawingWidthPreset1" min="2" max="24" step="1" value="9"></label><label><span data-i18n="太い">太い</span><input type="number" id="drawingWidthPreset2" min="3" max="48" step="1" value="15"></label></div></details>
+                  <div class="input-group"><label for="slideNeonGlowStrength" data-i18n="ネオンの発光強度">ネオンの発光強度</label><input id="slideNeonGlowStrength" type="range" min="0.25" max="3" step="0.25" value="1" /></div>
+                  <div class="input-group">
+                    <label for="fadeTime" data-i18n="ネオン残存時間 (秒):">ネオン残存時間 (秒):&nbsp;</label>
+                    <input type="number" id="fadeTime" value="3" min="1" />
+                  </div>
+                  <div class="ui1e-drawing-clear-actions" role="group" aria-label="Drawing clear actions">
+                  <button id="clearSelectedSlideDrawingsButton" class="clear-button" type="button" data-i18n="選択スライドの描画をクリア">選択スライドの描画をクリア</button>
+                  <button type="button" id="clearScreenDrawingsButton" data-i18n="画面上の描画をクリア">画面上の描画をクリア</button><button id="clearDrawingsButton" class="clear-button" data-i18n="すべてのスライド描画をクリア">
+                    すべてのスライド描画をクリア
+                  </button>
+                  </div>
+                  <label class="drawing-keep-setting"><input id="drawingKeepOnPresentationExit" type="checkbox" checked /><span data-i18n="発表中の描画を終了後も保持">発表中の描画を終了後も保持</span></label>
+                </div>
+              </details><details class="inspector-section workspace-foldable" id="drawingFutureSettings" aria-labelledby="drawingFutureTitle" hidden><summary><span id="drawingFutureTitle" data-i18n="Drawing settings">Drawing settings</span></summary><div class="inspector-section-content"><span class="workspace-eyebrow" data-i18n="PLANNED SETTINGS">PLANNED SETTINGS</span><p data-i18n="次の機能追加用スペースです。現在の描画設定は上で変更できます。">次の機能追加用スペースです。現在の描画設定は上で変更できます。</p><fieldset disabled><legend data-i18n="今後追加予定">今後追加予定</legend><label><span data-i18n="パレットのカスタマイズ">パレットのカスタマイズ</span><select id="futureDrawingPaletteSelect" aria-label="将来のパレット設定" data-i18n-aria-label="将来のパレット設定"><option data-i18n="編集可能なカラーパレット">編集可能なカラーパレット</option></select></label><label><span data-i18n="ネオンの表現">ネオンの表現</span><select id="futureDrawingNeonSelect" aria-label="将来のネオン設定" data-i18n-aria-label="将来のネオン設定"><option data-i18n="グロー・フェード曲線">グロー・フェード曲線</option></select></label><label><span data-i18n="描画の扱い">描画の扱い</span><select id="futureDrawingRetentionSelect" aria-label="将来の描画保持設定" data-i18n-aria-label="将来の描画保持設定"><option data-i18n="スライド移動時の保持・消去">スライド移動時の保持・消去</option></select></label></fieldset></div></details></section><section id="workspace-project" class="workspace-panel" role="tabpanel" aria-labelledby="workspace-tab-project" data-workspace-panel="project" hidden data-history-scope="project"><div class="workspace-heading"><span class="workspace-eyebrow">WORKSPACE / 07</span><h1 data-i18n="Project">Project</h1><p data-i18n="ファイル・外観・プロジェクト情報">ファイル・外観・プロジェクト情報</p><div class="workspace-panel-actions" role="group" aria-label="このパネルの項目を開閉" data-i18n-aria-label="このパネルの項目を開閉"><button type="button" class="small-button" data-expand-panel="project" data-i18n="Expand All">Expand All</button><button type="button" class="small-button" data-collapse-panel="project" data-i18n="Collapse All">Collapse All</button></div></div><span id="projectContextProjectName" hidden></span><span id="projectContextEditingPreset" hidden></span><details class="inspector-section workspace-foldable" open><summary data-i18n="Project files">Project files</summary><div class="inspector-section-content"><div class="project-file-actions"><button id="newProjectButton" class="project-button" data-i18n="新規プロジェクト">
+            新規プロジェクト
+          </button><button id="openProjectButton" class="project-button" data-i18n="プロジェクトを開く">
+            プロジェクトを開く
+          </button></div><p class="workspace-hint" data-i18n="保存・読み込みは既存のプロジェクト形式を使用します。">保存・読み込みは既存のプロジェクト形式を使用します。</p></div></details><details class="inspector-section workspace-foldable library-management-card" id="projectAssetLibraryCard" open>
+  <summary data-i18n="Asset Library">Asset Library</summary>
+  <div class="inspector-section-content">
+    <p class="inspector-hint" data-i18n="Asset Library registration description">Register GLB/SPZ files here, then place registered assets in Scene &amp; Assets. Unregistering a file never removes it from disk or from Scenes.</p>
+    <div class="library-management-actions scene4b-asset-library-actions"><button id="projectAssetManageButton" type="button" class="small-button" data-i18n="Manage Asset Library">Manage Asset Library</button><button type="button" class="small-button workspace-link" data-workspace-link="scene" data-i18n="Manage Scene Assets">Manage Scene Assets</button></div>
+    <dialog id="projectAssetManageDialog" class="library-manager-dialog asset-manager-dialog" aria-labelledby="projectAssetManageTitle">
+      <h2 id="projectAssetManageTitle" data-i18n="Asset Library">Asset Library</h2>
+      <p class="library-manager-help" data-i18n="Asset Library registration description">Register GLB/SPZ files here, then place registered assets in Scene &amp; Assets. Unregistering a file never removes it from disk or from Scenes.</p>
+    <label for="projectAssetLibrarySelector" data-i18n="Registered asset files">Registered asset files</label>
+    <select id="projectAssetLibrarySelector" aria-label="Registered asset files" data-i18n-aria-label="Registered asset files"></select>
+    <p class="inspector-hint" data-i18n="Asset name filename hint">The display name and original filename are shown together, including for placed Scene assets.</p>
+    <p id="projectAssetLibraryStatus" class="workspace-hint" role="status"></p>
+    <div class="library-management-actions">
+      <button type="button" class="small-button" id="projectAssetImportButton" data-i18n="Import Asset files">Import Asset files</button>
+      <button type="button" class="small-button" id="refreshProjectAssetFilesButton" data-i18n="Scan and register files">Scan and register files</button>
+      <button type="button" class="small-button" id="projectAssetRenameButton" data-i18n="Rename selected Asset">Rename selected Asset</button>
+      <button type="button" class="small-button" id="projectAssetResetNameButton" data-i18n="Reset display name to filename">Reset display name to filename</button>
+      <button type="button" class="small-button clear-button" id="projectAssetUnregisterButton" data-i18n="Unregister selected Asset">Unregister selected Asset</button>
+    </div>
+    <input id="projectAssetImportInput" type="file" accept=".glb,.spz" multiple hidden aria-label="アセットファイルを選択" data-i18n-aria-label="アセットファイルを選択">
+    <div class="library-manager-footer"><button id="projectAssetManageClose" type="button" class="small-button" data-i18n="Close">Close</button></div>
+    </dialog>
+
+  </div>
+</details>
+<details class="inspector-section workspace-foldable library-management-card" id="projectSkyboxLibraryCard" open>
+  <summary data-i18n="Skybox Library">Skybox Library</summary>
+  <div class="inspector-section-content">
+    <p class="inspector-hint" data-i18n="Skybox Library description">Register six-face image sets from skybox/. Registration does not change an active Scene or Slide skybox.</p>
+    <div class="library-management-actions"><button id="skyboxLibraryManageButton" type="button" class="small-button" data-i18n="Manage Skybox Library">Manage Skybox Library</button></div>
+  </div>
+</details>
+<dialog id="skyboxLibraryDialog" class="library-manager-dialog" aria-labelledby="skyboxLibraryDialogTitle">
+  <h2 id="skyboxLibraryDialogTitle" data-i18n="Skybox Library">Skybox Library</h2>
+  <p class="library-manager-help" data-i18n="Skybox Library description">Register six-face image sets from skybox/. Registration does not change an active Scene or Slide skybox.</p>
+  <label for="skyboxLibraryDetected" data-i18n="Unregistered skybox sets">Unregistered skybox sets</label>
+  <select id="skyboxLibraryDetected"></select>
+  <div class="library-management-actions"><button type="button" id="skyboxLibraryRegister" data-i18n="Register Skybox">Register Skybox</button><button type="button" id="skyboxLibraryRescan" data-i18n="Refresh Skybox Sets">Refresh Skybox Sets</button></div>
+  <label for="skyboxLibraryRegistered" data-i18n="Registered skyboxes">Registered skyboxes</label>
+  <select id="skyboxLibraryRegistered"></select>
+  <div class="library-management-actions skybox-unregister-row"><button type="button" id="skyboxLibraryUnregister" data-i18n="Unregister Skybox">Unregister Skybox</button></div>
+  <label for="skyboxLibraryName" data-i18n="Display name">Display name</label>
+  <input id="skyboxLibraryName" type="text" maxlength="120" autocomplete="off">
+  <div class="library-management-actions"><button type="button" id="skyboxLibraryRename" data-i18n="Rename Skybox">Rename Skybox</button></div>
+  <p id="skyboxLibraryStatus" class="workspace-hint" role="status"></p>
+  <div class="library-manager-footer"><button id="skyboxLibraryClose" type="button" data-i18n="Close">Close</button></div>
+</dialog>
+<dialog id="skyboxLibraryActionDialog" class="preset-name-dialog library-action-dialog" aria-labelledby="skyboxLibraryActionTitle">
+  <form id="skyboxLibraryActionForm" novalidate>
+    <h2 id="skyboxLibraryActionTitle"></h2><p id="skyboxLibraryActionInfo"></p>
+    <input id="skyboxLibraryActionName" type="text" maxlength="120" autocomplete="off" aria-label="Display name" data-i18n-aria-label="Display name">
+    <div class="dialog-actions"><button id="skyboxLibraryActionCancel" type="button" data-i18n="Cancel">Cancel</button><button id="skyboxLibraryActionSubmit" type="submit" class="primary-action"></button></div>
+  </form>
+</dialog>
+<details class="inspector-section workspace-foldable library-management-card" id="projectAudioLibraryCard" open>
+  <summary data-i18n="Audio Library">Audio Library</summary>
+  <div class="inspector-section-content">
+    <p class="inspector-hint" data-i18n="Audio Library description">Review, register, rename and remove BGM and SFX assets.</p>
+    <div class="library-management-actions"><button id="audioLibraryScanButton" type="button" class="small-button" data-i18n="Manage Audio Library" data-i18n-title="Review new BGM and SFX files" title="Review new BGM and SFX files">Manage Audio Library</button></div>
+  </div>
+</details><details id="projectPresetLibraryCard" class="inspector-section workspace-foldable library-management-card">
+              <summary data-i18n="Preset Library">Preset Library</summary>
+              <div class="inspector-section-content">
+                <p class="inspector-hint" data-i18n="Preset Library description">Reusable Transition and Sound presets for Scenes and Slides. Editing a shared preset updates every Scene or Slide using it.</p>
+                <div class="library-management-content"><div id="projectPresetEditors" class="preset-library-editors"></div></div>
+              </div>
+            </details>
+<details id="workspaceAppearanceSettings" class="inspector-section workspace-foldable" open><summary data-i18n="Appearance">Appearance</summary><div class="inspector-section-content"><div class="language-preference"><label for="workspaceLanguage" data-i18n="🌐 表示言語">🌐 表示言語</label><select id="workspaceLanguage"><option value="ja">日本語</option><option value="en">English</option></select></div><label for="workspaceTheme" data-i18n="配色テーマ">配色テーマ</label><select id="workspaceTheme"><option value="system" data-i18n="システムに合わせる">システムに合わせる</option><optgroup label="Light themes / ライト系" data-i18n-label="Light themes / ライト系"><option value="light" data-i18n="Light / 白昼">Light / 白昼</option><option value="glacier" data-i18n="Glacier / 氷河">Glacier / 氷河</option><option value="blossom" data-i18n="Blossom / さくら">Blossom / さくら</option><option value="citrus" data-i18n="Citrus / 柑橘">Citrus / 柑橘</option><option value="paper" data-i18n="Paper / 古書">Paper / 古書</option><option value="candy" data-i18n="Candy / 砂糖菓子">Candy / 砂糖菓子</option><option value="spectrum" data-i18n="Spectrum / レインボー">Spectrum / レインボー</option><option value="soda" data-i18n="Soda Pop / カラフル">Soda Pop / カラフル</option></optgroup><optgroup label="Dark themes / ダーク系" data-i18n-label="Dark themes / ダーク系"><option value="dark" data-i18n="Dark / 黒曜">Dark / 黒曜</option><option value="midnight" data-i18n="Midnight / ミッドナイト">Midnight / ミッドナイト</option><option value="aurora" data-i18n="Aurora / 極光">Aurora / 極光</option><option value="rose" data-i18n="Rose / 薔薇夜">Rose / 薔薇夜</option><option value="neon" data-i18n="Neon / 電光">Neon / 電光</option><option value="terminal" data-i18n="Terminal / 燐光端末">Terminal / 燐光端末</option><option value="espresso" data-i18n="Espresso / 深煎り">Espresso / 深煎り</option><option value="laser" data-i18n="Laser Show / 光線舞踏">Laser Show / 光線舞踏</option><option value="arcade" data-i18n="Arcade / 電脳遊戯">Arcade / 電脳遊戯</option></optgroup></select><p class="workspace-hint" data-i18n="外観はこの端末のブラウザーに保存されます。">外観はこの端末のブラウザーに保存されます。</p><p id="workspacePreferenceStatus" class="workspace-hint" role="status"></p></div></details><details class="inspector-section" open><summary data-i18n="Operation Sound">Operation Sound</summary><div class="inspector-section-content"><label class="sound-preference"><input id="workspaceUiSound" type="checkbox"><span data-i18n="設定操作の効果音を鳴らす">設定操作の効果音を鳴らす</span></label><p class="workspace-hint" data-i18n="初期値はオフです。設定のクリック・変更に短い効果音を付けます。スライドのSound / BGMとは別の設定で、この端末に保存されます。">初期値はオフです。設定のクリック・変更に短い効果音を付けます。スライドのSound / BGMとは別の設定で、この端末に保存されます。</p><button id="workspaceSoundPreview" type="button" data-i18n="Button sound preview">Button sound preview</button><p id="workspaceSoundStatus" class="workspace-hint" role="status"></p><label class="sound-preference"><input id="workspaceSliderSound" type="checkbox"><span data-i18n="スライダー操作の効果音を鳴らす">スライダー操作の効果音を鳴らす</span></label><p class="workspace-hint" data-i18n="スライダーの移動中に短い音を鳴らします。設定操作音とは別にオン・オフでき、初期値はオフです。">スライダーの移動中に短い音を鳴らします。設定操作音とは別にオン・オフでき、初期値はオフです。</p><div class="sound-preview-control"><label for="workspaceSliderPreview" data-i18n="Slider sound preview">Slider sound preview</label><input id="workspaceSliderPreview" type="range" min="0" max="100" step="1" value="50"><p class="workspace-hint" data-i18n="Preview controls only play sounds; they do not change your project.">Preview controls only play sounds; they do not change your project.</p></div></div></details><details class="inspector-section"><summary data-i18n="Diagnostics / Coordinates">Diagnostics / Coordinates</summary><div class="slide-settings-inspector">
+              <h3 data-i18n="Debug / Coordinates">Debug / Coordinates</h3>
+              <div id="slideSettingsEmptyMessage" data-i18n="スライドが選択されていません">
+                スライドが選択されていません
+              </div>
+              <div id="slideSettingsContent"></div>
+              <div class="coordinate">
+                <span class="coordinate-label" data-i18n="Canvas: (">Canvas: (</span>
+                <span id="webglCanvasX" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglCanvasY" class="coordinate-value">0</span>
+                <span class="coordinate-label">)</span>
+              </div>
+              <div class="coordinate">
+                <span class="coordinate-label" data-i18n="Position: (">Position: (</span>
+                <span id="webglWorldPosX" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldPosY" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldPosZ" class="coordinate-value">0</span>
+                <span class="coordinate-label">)</span>
+              </div>
+              <div class="coordinate">
+                <span class="coordinate-label" data-i18n="Right: (">Right: (</span>
+                <span id="webglWorldRightX" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldRightY" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldRightZ" class="coordinate-value">0</span>
+                <span class="coordinate-label">)</span>
+              </div>
+              <div class="coordinate">
+                <span class="coordinate-label" data-i18n="Forward: (">Forward: (</span>
+                <span id="webglWorldForwardX" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldForwardY" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldForwardZ" class="coordinate-value">0</span>
+                <span class="coordinate-label">)</span>
+              </div>
+              <div class="coordinate">
+                <span class="coordinate-label" data-i18n="Up: (">Up: (</span>
+                <span id="webglWorldUpX" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldUpY" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldUpZ" class="coordinate-value">0</span>
+                <span class="coordinate-label">)</span>
+              </div>
+              <div class="coordinate">
+                <span class="coordinate-label" data-i18n="Rotation: (">Rotation: (</span>
+                <span id="webglWorldAngleX" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldAngleY" class="coordinate-value">0</span>
+                <span class="coordinate-label">,</span>
+                <span id="webglWorldAngleZ" class="coordinate-value">0</span>
+                <span class="coordinate-label">)</span>
+              </div>
+            </div></details></section></div>
+        </aside>
+      </main>
+      
+      <section class="editor-bottom" id="slideTimeline"><div id="thumbnailResizer" class="thumbnail-resizer" role="separator" tabindex="0" aria-orientation="horizontal" aria-valuemin="90" aria-valuemax="300" aria-valuenow="120" aria-label="Thumbnail height" data-i18n-aria-label="Thumbnail height"></div><div class="timeline-heading"><button id="thumbnailCollapse" type="button" aria-expanded="true" aria-controls="thumbnailStrip" data-i18n="Slides" class="timeline-title-toggle">Slides</button><span data-i18n="クリック：移動 · Ctrl / Shift：複数選択 · ドラッグ：並べ替え">クリック：移動 · Ctrl / Shift：複数選択 · ドラッグ：並べ替え</span><div class="timeline-controls"><label for="thumbnailHeight" data-i18n="Thumbnail height">Thumbnail height</label><input id="thumbnailHeight" type="range" min="90" max="300" step="10" value="120"></div></div>
+        <div class="editor-bottom-thumbnails" id="thumbnailStrip">
+          <div id="thumbnailContainer" class="thumbnail-container"></div>
+        </div>
+        <details class="editor-table-details">
+          <summary data-i18n="Slide Data Table">Slide Data Table</summary>
+          <div id="tableContainer" class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col" data-i18n="ファイル名">ファイル名</th><th scope="col" data-i18n="Label">Label</th>
+                  <th scope="col">x</th>
+                  <th scope="col">y</th>
+                  <th scope="col">z</th>
+                  <th scope="col" data-i18n="pitch">pitch</th>
+                  <th scope="col" data-i18n="yaw">yaw</th>
+                  <th scope="col" data-i18n="roll">roll</th>
+                  <th scope="col" data-i18n="Scene Preset">Scene Preset</th>
+                  <th scope="col" data-i18n="transition Preset">transition Preset</th>
+                  <th scope="col" data-i18n="sound Preset">sound Preset</th>
+                  <th scope="col" data-i18n="Interaction">Interaction</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+      <div id="imageModal" class="modal">
+        <div class="modal-image-wrapper">
+          <img class="modal-content" id="modalImage" />
+          <span class="close-button"> &times; </span>
+        </div>
+      </div>
+      <div id="slideContextMenu" class="slide-context-menu" hidden>
+        <button type="button" data-slide-command="set-current" data-i18n="Set as Current Slide">Set as Current Slide</button>
+        <div class="context-menu-separator"></div>
+        <button type="button" data-slide-command="copy"><span data-i18n="Copy" data-i18n-space="after">
+          Copy
+          </span><span class="context-menu-shortcut"> Ctrl+C </span>
+        </button>
+        <button type="button" data-slide-command="paste-after"><span data-i18n="Paste After" data-i18n-space="after">
+          Paste After
+          </span><span class="context-menu-shortcut"> Ctrl+V </span>
+        </button>
+        <button type="button" data-slide-command="duplicate" data-i18n="Duplicate">Duplicate</button>
+        <div class="context-menu-separator"></div>
+        <button type="button" data-slide-command="move-left" data-i18n="Move Left">Move Left</button>
+        <button type="button" data-slide-command="move-right" data-i18n="Move Right">
+          Move Right
+        </button>
+        <button type="button" data-slide-command="gather-selected" data-i18n="Gather Selected">Gather Selected</button>
+        <button type="button" data-slide-command="move-selected-to-start" data-i18n="Move Selected to Start">Move Selected to Start</button>
+        <button type="button" data-slide-command="move-selected-to-end" data-i18n="Move Selected to End">Move Selected to End</button>
+        <div class="context-menu-separator"></div>
+        <button type="button" data-slide-command="place-camera" data-i18n="Camera前へ配置">
+          Camera前へ配置
+        </button>
+        <div class="context-menu-separator"></div>
+        <button type="button" data-slide-command="delete" class="danger"><span data-i18n="Delete" data-i18n-space="after">
+          Delete
+          </span><span class="context-menu-shortcut"> Del </span>
+        </button>
+      </div>
+      <div id="canvasContextMenu" class="slide-context-menu canvas-context-menu" role="menu" aria-label="Canvas actions" hidden>
+  <div class="canvas-context-title" data-canvas-kind="slide" data-i18n="Selected Slides">Selected Slides</div>
+  <div class="canvas-context-title" data-canvas-kind="asset" data-i18n="Selected Assets">Selected Assets</div>
+  <div class="canvas-context-title" data-canvas-kind="empty" data-i18n="Canvas">Canvas</div>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="set-active" data-i18n="Set as Active Object">Set as Active Object</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-gizmo" data-i18n="Edit Slide Gizmo">Edit Slide Gizmo</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="set-current" data-i18n="Set as Current Slide">Set as Current Slide</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-only" data-i18n="Select only this Slide">Select only this Slide</button>
+  <div class="context-menu-separator" data-canvas-kind="slide"></div>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-copy" data-i18n="Copy">Copy</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-paste" data-i18n="Paste After">Paste After</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-paste-place" data-i18n="Paste in Place">Paste in Place</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-duplicate" data-i18n="Duplicate">Duplicate</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="hide-selection" data-i18n="Hide selected objects temporarily">Hide selected objects temporarily</button>
+  <button type="button" data-canvas-kind="slide" data-canvas-command="slide-delete" class="danger" data-i18n="Delete">Delete</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="set-active" data-i18n="Set as Active Object">Set as Active Object</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-gizmo" data-i18n="Edit Asset Gizmo">Edit Asset Gizmo</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-only" data-i18n="Select only this Asset">Select only this Asset</button>
+  <div class="context-menu-separator" data-canvas-kind="asset"></div>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-copy" data-i18n="Copy selected Assets">Copy selected Assets</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-paste" data-i18n="Paste Assets">Paste Assets</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-paste-place" data-i18n="Paste in Place">Paste in Place</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-duplicate" data-i18n="Duplicate">Duplicate</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="hide-selection" data-i18n="Hide selected objects temporarily">Hide selected objects temporarily</button>
+  <button type="button" data-canvas-kind="asset" data-canvas-command="asset-delete" class="danger" data-i18n="Delete">Delete</button>
+  <button type="button" data-canvas-kind="empty" data-canvas-command="slide-paste" data-i18n="Paste Slides">Paste Slides</button>
+  <button type="button" data-canvas-kind="empty" data-canvas-command="slide-paste-place" data-i18n="Paste Slides in Place">Paste Slides in Place</button>
+  <button type="button" data-canvas-kind="empty" data-canvas-command="asset-paste" data-i18n="Paste Assets">Paste Assets</button>
+  <button type="button" data-canvas-kind="empty" data-canvas-command="asset-paste-place" data-i18n="Paste Assets in Place">Paste Assets in Place</button>
+  <div class="context-menu-separator" data-canvas-kind="all"></div>
+  <button type="button" data-canvas-kind="all" data-canvas-command="restore-hidden" data-i18n="Show all temporarily hidden objects">Show all temporarily hidden objects</button>
+</div>
+      <div id="presentationBgmNotice" class="presentation-bgm-notice" hidden>
+        <span id="presentationBgmMessage" role="status"></span>
+        <button id="presentationBgmRetryButton" class="small-button" type="button" hidden data-i18n="BGM を開始">
+          BGM を開始
+        </button>
+      </div>
+      <div id="presentationOverlay" class="presentation-overlay" hidden>
+        <div id="presentationHud" class="presentation-hud">
+          <div class="presentation-hud-main">
+            <span id="presentationSlideNumber">0</span>
+            <span class="presentation-hud-separator"> / </span>
+            <span id="presentationSlideCount">0</span>
+            <span class="presentation-hud-time">
+              <span id="presentationElapsedTime"> 00:00 </span>
+            </span>
+          </div>
+          <div class="presentation-hud-sub">
+            <span id="presentationLoopStatus" data-i18n="LOOP" data-i18n-space="after"> LOOP </span>
+            <span class="presentation-hud-help">
+              ← → Slide&nbsp;&nbsp; Esc Exit
+            </span>
+          </div>
+        </div>
+      </div>
+      <div id="presentationControls" class="presentation-controls" hidden>
+        <div class="presentation-control-shell">
+          <div class="presentation-control-bar">
+<button id="presentationControlsPinButton" class="presentation-control-button" type="button" aria-pressed="false" aria-label="バーを固定" data-i18n-aria-label="バーを固定" title="バーを固定" data-i18n-title="バーを固定">📍</button>
+            <button id="presentationPreviousButton" class="presentation-control-button" type="button" aria-label="Previous slide" data-i18n-aria-label="Previous slide">
+              ←
+            </button>
+            <div class="presentation-control-position">
+              <button id="presentationSlideJumpButton" class="presentation-slide-jump-button" type="button" aria-label="Jump to slide" data-i18n-aria-label="Jump to slide">
+                <span id="presentationControlSlideNumber"> 0 </span>
+              </button>
+              <input id="presentationSlideJumpInput" class="presentation-slide-jump-input" type="number" min="1" step="1" hidden aria-label="presentation Slide Jump Input" data-i18n-aria-label="presentation Slide Jump Input">
+              <span class="presentation-control-separator"> / </span>
+              <span id="presentationControlSlideCount"> 0 </span>
+            </div>
+            <button id="presentationNextButton" class="presentation-control-button" type="button" aria-label="Next slide" data-i18n-aria-label="Next slide">
+              →
+            </button>
+            <div class="presentation-control-divider"></div>
+            <button id="presentationOverviewButton" class="presentation-control-button" type="button" aria-label="Slide overview" title="Slide overview" data-i18n-title="Slide overview" data-i18n-aria-label="Slide overview">
+              ▦
+            </button>
+            <button id="presentationAutoPlayButton" class="presentation-control-button" type="button" aria-label="Start autoplay" title="Start autoplay" data-i18n-title="Start autoplay" data-i18n-aria-label="Start autoplay">
+              ▶
+            </button>
+            <div class="presentation-control-divider"></div>
+            <button id="presentationCameraButton" class="presentation-control-button presentation-tool-button" type="button" aria-pressed="false" aria-label="視点操作" data-i18n-aria-label="視点操作" data-i18n-aria-label="視点操作" title="視点操作" data-i18n-title="視点操作"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><path d="m9 5 3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg></button>
+            <button id="presentationSlideDrawButton" class="presentation-control-button presentation-tool-button" type="button" aria-pressed="false" aria-label="スライド描画" data-i18n-aria-label="スライド描画" title="スライド描画" data-i18n-title="スライド描画"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4M4 20l4.5-1 11-11a2.8 2.8 0 0 0-4-4l-11 11L4 20Z"/><path d="M4 20h6"/></svg></button>
+            <button id="presentationDrawingUndo" class="presentation-control-button" type="button" data-i18n-title="描画を戻す" title="描画を戻す" aria-label="描画を戻す" data-i18n-aria-label="描画を戻す" disabled>↶</button>
+            <button id="presentationDrawingRedo" class="presentation-control-button" type="button" data-i18n-title="描画をやり直す" title="描画をやり直す" aria-label="描画をやり直す" data-i18n-aria-label="描画をやり直す" disabled>↷</button>
+            <div class="presentation-brush-palette" role="group" aria-label="描画パレット" data-i18n-aria-label="描画パレット">
+              <div class="presentation-palette-tools"><button id="presentationToolBrush" type="button" aria-pressed="true">✎ <span data-i18n="ペン">ペン</span></button><button id="presentationToolEraser" type="button" aria-pressed="false">⌫ <span data-i18n="消しゴム">消しゴム</span></button></div><label class="presentation-legacy-select"><span data-i18n="線の種類">線の種類</span><select id="presentationBrushStyle"><option value="standard" data-i18n="通常">通常</option><option value="neon" data-i18n="ネオン">ネオン</option></select></label>
+              <div class="presentation-style-switch" role="group" aria-label="線の種類" data-i18n-aria-label="線の種類"><button type="button" data-presentation-style="standard" aria-pressed="true" data-i18n="通常">通常</button><button type="button" data-presentation-style="neon" aria-pressed="false" data-i18n="ネオン">ネオン</button></div><label class="presentation-legacy-select"><span data-i18n="線の色">線の色</span><select id="presentationBrushColor"><option value="rgba(255, 0, 0, 1)" data-i18n="赤">赤</option><option value="rgba(0, 128, 255, 1)" data-i18n="青">青</option><option value="rgba(0, 255, 0, 1)" data-i18n="緑">緑</option><option value="rgba(255, 255, 0, 1)" data-i18n="黄">黄</option><option value="rgba(0, 0, 0, 1)" data-i18n="黒">黒</option></select></label>
+              <div class="presentation-quick-colors" id="presentationQuickColors" role="group" aria-label="線の色" data-i18n-aria-label="線の色"></div><label class="presentation-legacy-select"><span data-i18n="線幅">線幅</span><select id="presentationBrushWidth"><option value="3">●</option><option value="9">●●</option><option value="15">●●●</option></select><span class="presentation-brush-width-preview" aria-hidden="true"></span></label>
+              <div class="presentation-opacity-control"><label for="presentationPenOpacity" data-i18n="ペンの不透明度">ペンの不透明度</label><input id="presentationPenOpacity" type="range" min="5" max="100" step="5" value="100"><output id="presentationPenOpacityValue" for="presentationPenOpacity">100%</output></div>
+              <div class="presentation-quick-widths" role="group" aria-label="線幅" data-i18n-aria-label="線幅">
+                <button type="button" data-brush-width="3" aria-label="3" title="3"><span class="quick-width-line" style="height:3px"></span></button>
+                <button type="button" data-brush-width="9" aria-label="9" title="9"><span class="quick-width-line" style="height:7px"></span></button>
+                <button type="button" data-brush-width="15" aria-label="15" title="15"><span class="quick-width-line" style="height:12px"></span></button>
+              </div>
+            </div>
+            
+            
+            <button id="presentationFullscreenButton" class="presentation-control-button" type="button" aria-label="Toggle fullscreen" data-i18n-aria-label="Toggle fullscreen">
+              ⛶
+            </button>
+            <button id="presentationExitButton" class="presentation-control-button presentation-exit-button" type="button" aria-label="Exit presentation" data-i18n-aria-label="Exit presentation">
+              ✕
+            </button>
+          </div>
+          <div id="presentationProgressTrack" class="presentation-progress-track" role="slider" tabindex="0" aria-label="Presentation progress" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1" data-i18n-aria-label="Presentation progress">
+            <div
+              id="presentationProgressBar"
+              class="presentation-progress-bar"
+            ></div>
+            <div
+              id="presentationProgressPreviewBar"
+              class="presentation-progress-preview-bar"
+              hidden
+            ></div>
+            <div
+              id="presentationProgressPreview"
+              class="presentation-progress-preview"
+              hidden
+            >
+              1 / 1
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="presentationOverview" class="presentation-overview" hidden>
+        <div class="presentation-overview-panel" role="dialog" aria-modal="true" aria-label="Slide overview" data-i18n-aria-label="Slide overview">
+          <div class="presentation-overview-header">
+            <div class="presentation-overview-title" data-i18n="Slides">Slides</div>
+            <input id="presentationOverviewSearch" class="presentation-overview-search" type="search" placeholder="Search slides..." autocomplete="off" spellcheck="false" aria-label="Search slides" data-i18n-aria-label="Search slides" data-i18n-placeholder="Search slides...">
+            <div
+              id="presentationOverviewStatus"
+              class="presentation-overview-status"
+            >
+              0 / 0
+            </div>
+            <button id="presentationOverviewCloseButton" class="presentation-overview-close" type="button" aria-label="Close slide overview" data-i18n-aria-label="Close slide overview">
+              ✕
+            </button>
+          </div>
+          <div
+            id="presentationOverviewGrid"
+            class="presentation-overview-grid"
+          ></div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="appNotice"
+      class="app-notice"
+      hidden
+      role="status"
+      aria-live="polite"
+    >
+      <div class="app-notice-content">
+        <span id="appNoticeMessage" class="app-notice-message"></span>
+        <button id="appNoticeCloseButton" class="app-notice-close" type="button" aria-label="Close" data-i18n-aria-label="Close">
+          ×
+        </button>
+      </div>
+    </div>
+  <dialog id="newProjectNameDialog" class="preset-name-dialog" aria-labelledby="newProjectNameTitle">
+    <form id="newProjectNameForm" novalidate>
+      <h2 id="newProjectNameTitle" data-i18n="新規プロジェクト名を入力してください">新規プロジェクト名を入力してください</h2>
+      <p id="newProjectNameDescription" data-i18n="プロジェクト名のフォルダとproject.jsonを作成します。">プロジェクト名のフォルダとproject.jsonを作成します。</p>
+      <label for="newProjectNameInput" data-i18n="プロジェクト名">プロジェクト名</label>
+      <input id="newProjectNameInput" type="text" maxlength="160" autocomplete="off" required aria-describedby="newProjectNameDescription newProjectNameError">
+      <p id="newProjectNameError" class="form-error" role="alert" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button id="newProjectNameCancel" type="button" data-i18n="Cancel">Cancel</button>
+        <button id="newProjectNameConfirm" type="submit" class="primary-action" data-i18n="保存先を選択">保存先を選択</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="assetLibraryActionDialog" class="preset-name-dialog" aria-labelledby="assetLibraryActionTitle">
+    <form id="assetLibraryActionForm" novalidate>
+      <h2 id="assetLibraryActionTitle"></h2>
+      <p id="assetLibraryActionDescription"></p>
+      <label id="assetLibraryNameLabel" for="assetLibraryNameInput" data-i18n="Asset display name">Asset display name</label>
+      <input id="assetLibraryNameInput" type="text" maxlength="160" autocomplete="off">
+      <p id="assetLibraryActionError" class="form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button id="assetLibraryActionCancel" type="button" data-i18n="Cancel">Cancel</button>
+        <button id="assetLibraryActionConfirm" type="submit" class="primary-action"></button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="presetNameDialog" class="preset-name-dialog" aria-labelledby="presetNameTitle"><form id="presetNameForm" novalidate><h2 id="presetNameTitle" data-i18n="Rename Scene Preset">Rename Scene Preset</h2><p id="presetNameHelp" data-i18n="Renaming also updates slides that use this preset.">Renaming also updates slides that use this preset.</p><label for="presetNameInput" data-i18n="Preset name">Preset name</label><input id="presetNameInput" type="text" autocomplete="off" aria-describedby="presetNameHelp presetNameError"><p id="presetNameError" class="form-error" role="alert"></p><div class="dialog-actions"><button id="presetNameCancel" type="button" data-i18n="Cancel">Cancel</button><button id="presetNameApply" type="submit" class="primary-action" data-i18n="Apply name">Apply name</button></div></form></dialog>
+  <dialog id="slideAttachedTextEditorDialog" class="preset-name-dialog slide-attachment-dialog" aria-labelledby="slideAttachedTextEditorTitle">
+    <h2 id="slideAttachedTextEditorTitle" data-i18n="Edit attached text">Edit attached text</h2>
+    <p data-i18n="Text attachment help">Store code or notes independently of the link action.</p>
+    <textarea id="slideAttachedTextEditorInput" spellcheck="false" aria-label="Attached text" data-i18n-aria-label="Attached text"></textarea>
+    <div class="dialog-actions"><button id="slideAttachedTextCancel" type="button" data-i18n="Cancel">Cancel</button><button id="slideAttachedTextSave" type="button" class="primary-action" data-i18n="Save text">Save text</button></div>
+  </dialog>
+  <dialog id="slideAttachedTextViewerDialog" class="preset-name-dialog slide-attachment-dialog" aria-labelledby="slideAttachedTextViewerTitle">
+    <div class="slide-attachment-heading"><h2 id="slideAttachedTextViewerTitle" data-i18n="Attached text">Attached text</h2><p id="slideAttachedTextCopyStatus" role="status" aria-live="polite"></p></div>
+    <pre id="slideAttachedTextViewerContent" tabindex="0"></pre>
+    <div class="dialog-actions"><button id="slideAttachedTextViewerClose" type="button" data-i18n="Close">Close</button><button id="slideAttachedTextCopy" type="button" class="primary-action" data-i18n="Copy text">Copy text</button></div>
+  </dialog>
+</body>
+</html>
