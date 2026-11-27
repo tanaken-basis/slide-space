@@ -115,6 +115,7 @@ import {
 import {
   extractFilenameFromPath,
   createSlideImagePathFromId,
+  slideImageNameCandidates,
   extractImageIdFromSlideImagePath,
   normalizeSlideImagePath,
 } from "./filePathUtils.js";
@@ -190,7 +191,7 @@ const cameraShiftInitY = 0.0;
 const cameraShiftInitZ = DEFAULT_EDITOR_CAMERA.position[2];
 
 // カメラの視点からのカメラの位置
-const cameraRadiusInit = 1.2;
+const cameraRadiusInit = 1.3;
 
 // カメラの初期状態
 const targetInitX = 0;
@@ -2984,21 +2985,24 @@ const syncEnvironmentUi = function (environment) {
 
   const resolvedFogDensity = Number(environment.fogDensity ?? 0.002);
 
-  turbiditySlider.value = resolvedTurbidity;
-
-  turbidityValue.textContent = resolvedTurbidity;
-
-  inclinationSlider.value = resolvedInclination;
-
-  inclinationValue.textContent = resolvedInclination;
-
-  azimuthSlider.value = resolvedAzimuth;
-
-  azimuthValue.textContent = resolvedAzimuth;
-
-  fogDensitySlider.value = resolvedFogDensity;
-
-  fogDensityValue.textContent = resolvedFogDensity;
+  // The rendered environment may be a Slide override even while the user is
+  // editing a Scene preset. Never use the rendered values to overwrite the
+  // shared editor, or interrupt a focused slider/number gesture.
+  for (const [key, value, slider, readout] of [
+    ["turbidity", resolvedTurbidity, turbiditySlider, turbidityValue],
+    ["inclination", resolvedInclination, inclinationSlider, inclinationValue],
+    ["azimuth", resolvedAzimuth, azimuthSlider, azimuthValue],
+    ["fogDensity", resolvedFogDensity, fogDensitySlider, fogDensityValue],
+  ]) {
+    const number = document.getElementById(`${key}Number`);
+    if (document.activeElement !== slider && document.activeElement !== number) {
+      slider.value = String(value);
+      readout.textContent = String(value);
+    }
+    if (number && document.activeElement !== number && document.activeElement !== slider) {
+      number.value = String(value);
+    }
+  }
 
   fogColorPicker.value = colorArrayToHex(environment.fogColor);
   if (typeof syncSkyModeControls === "function") syncSkyModeControls();
@@ -3929,6 +3933,28 @@ const avoidSlidePositionOverlap = function (newSlide) {
   newSlide.cameraPosition.addInPlace(delta);
 };
 
+// Improve-1C: persisted on this browser; the project format remains unchanged.
+const SLIDE_INSERT_PREF_KEY = 'slidespace.slideInsertOptions.v1';
+const slideInsertControls = {
+  x: document.getElementById('slideInsertOffsetX'),
+  y: document.getElementById('slideInsertOffsetY'),
+  z: document.getElementById('slideInsertOffsetZ'),
+  move: document.getElementById('slideInsertMoveCamera'),
+};
+try {
+  const saved = JSON.parse(localStorage.getItem(SLIDE_INSERT_PREF_KEY) || 'null');
+  if (saved && typeof saved === 'object') {
+    for (const key of ['x', 'y', 'z']) if (Number.isFinite(Number(saved[key]))) slideInsertControls[key].value = String(saved[key]);
+    if (typeof saved.move === 'boolean') slideInsertControls.move.checked = saved.move;
+  }
+} catch {}
+const readSlideInsertOptions = () => ({
+  ...Object.fromEntries(['x','y','z'].map(key => [key, Math.max(-10000,Math.min(10000,Number(slideInsertControls[key]?.value) || 0))])),
+  move: slideInsertControls.move?.checked === true,
+});
+for (const input of Object.values(slideInsertControls)) input?.addEventListener('change', () => {
+  try { localStorage.setItem(SLIDE_INSERT_PREF_KEY, JSON.stringify(readSlideInsertOptions())); } catch {}
+});
 const recordCurrentSlide = async function ({ blank = false, transparent = false, placement = "end" } = {}) {
   // UI-1B2: avoid firing an unrelated control effect during slide creation.
 
@@ -3941,7 +3967,7 @@ const recordCurrentSlide = async function ({ blank = false, transparent = false,
 
   const slideId = createUniqueSlideId();
 
-  const imagePath = blank ? null : `slides/slide(${slideId}).png`;
+  const imagePath = blank ? null : (await resolveSlideImagePathFromId(slideId) ?? `slides/slide(${slideId}).png`);
 
   // =========================================
   // 現在のカメラ姿勢
@@ -3965,6 +3991,13 @@ const recordCurrentSlide = async function ({ blank = false, transparent = false,
 
   const newSlideDistance = cameraRadiusInit;
   const slidePosition = cameraPosition.add(forward.scale(newSlideDistance));
+  // Camera-local position offset, including the newly associated camera pose.
+  const slideInsertOptions = readSlideInsertOptions();
+  const localOffset = camera.getDirection(Vector3.Right()).scale(slideInsertOptions.x)
+    .addInPlace(camera.getDirection(Vector3.Up()).scale(slideInsertOptions.y))
+    .addInPlace(forward.scale(slideInsertOptions.z));
+  slidePosition.addInPlace(localOffset);
+  cameraPosition.addInPlace(localOffset);
 
   // =========================================
   // スライドPlaneの回転
@@ -4064,8 +4097,8 @@ const recordCurrentSlide = async function ({ blank = false, transparent = false,
   );
 
   material.diffuseColor = transparent
-    ? new Color3(0.18, 0.65, 0.72)
-    : new Color3(1, 0.5, 0.5);
+    ? new Color3(0.18, 0.48, 0.9)
+    : new Color3(1, 1, 1);
 
   material.alpha = 0.5;
 
@@ -4116,7 +4149,7 @@ const recordCurrentSlide = async function ({ blank = false, transparent = false,
 
   renderTable();
 
-  if (!blank) await currentSlide();
+  if (!blank || slideInsertOptions.move) await currentSlide();
 
   refreshSlideSelectionUi();
   refreshSlideManagementUi();
@@ -4124,6 +4157,8 @@ const recordCurrentSlide = async function ({ blank = false, transparent = false,
 
   refreshSlideSettingsInspector();
 
+  // A new Slide immediately makes its Scene preset "used" in the editor.
+  refreshEditingScenePresetSelector();
   renderSlideThumbnails();
 };
 
@@ -4310,7 +4345,7 @@ const saveAttachedText = (text) => {
 const openSlideTextViewer = () => {
   const text = attachedTextForCurrentSlide();
   if (!text || !attachedTextViewerDialog || !attachedTextViewerContent) return;
-  attachedTextViewerContent.textContent = text;
+  attachedTextViewerContent.value = text;
   attachedTextViewerDialog.showModal();
 };
 document.getElementById('slideAttachedTextEdit')?.addEventListener('click', () => {
@@ -4328,7 +4363,7 @@ document.getElementById('slideAttachedTextClear')?.addEventListener('click', () 
 document.getElementById('slideAttachedTextViewerClose')?.addEventListener('click', () => attachedTextViewerDialog.close());
 document.getElementById('slideAttachedTextCopy')?.addEventListener('click', async () => {
   try {
-    await navigator.clipboard.writeText(attachedTextViewerContent.textContent || '');
+    await navigator.clipboard.writeText(attachedTextViewerContent.value || '');
     const label = document.getElementById('slideAttachedTextCopyStatus');
     if (label) label.textContent = t('Copied to clipboard');
   } catch {
@@ -4338,6 +4373,8 @@ document.getElementById('slideAttachedTextCopy')?.addEventListener('click', asyn
   }
 });
 attachedTextViewerDialog?.addEventListener('close', () => {
+  // Presentation-only edits never enter the project model.
+  if (attachedTextViewerContent) attachedTextViewerContent.value = '';
   const label = document.getElementById('slideAttachedTextCopyStatus');
   if (label) label.textContent = '';
 });
@@ -4382,6 +4419,10 @@ const refreshSlideSettingsInspector = function () {
     environmentOverrideKeys.length > 0
       ? "Override: " + environmentOverrideKeys.join(", ")
       : "Preset値を使用";
+
+  // Keep the clear button in sync with changes made in the shared Scene/Slide
+  // environment editor, not only when the slide selection changes.
+  refreshMultiSlideActionButtons();
 
   refreshSlideBgmOverrideControls();
 
@@ -6798,6 +6839,10 @@ const undoEditorAction = async function () {
 
         break;
 
+      case "slide-image-batch":
+        success = await applySlideImageBatchHistoryState(historyItem, 'before');
+        break;
+
       case "slide-presence":
         success = await applySlidePresenceState(
           historyItem,
@@ -7040,6 +7085,10 @@ const redoEditorAction = async function () {
           historyItem.afterImagePath,
         );
 
+        break;
+
+      case "slide-image-batch":
+        success = await applySlideImageBatchHistoryState(historyItem, 'after');
         break;
 
       case "slide-presence":
@@ -7511,7 +7560,7 @@ const assignScenePresetToCurrentSlide = async function (presetName) {
 
 const countSlidesUsingScenePreset = function (presetName) {
   return slideStates.filter(
-    (slideState) => slideState.scenePreset === presetName,
+    (slideState) => (slideState.scenePreset ?? "default") === presetName,
   ).length;
 };
 
@@ -7587,9 +7636,10 @@ const changeSkyMode = async (useSkybox) => {
   if (!env) return;
   // Do not activate a skybox without a configured image set.
   let selectedSkybox = null;
-  if (useSkybox && !env.skybox) {
-    // Activate the first registered set when no skybox is configured yet.
-    // The picker also defaults to this entry; no empty placeholder state.
+  if (useSkybox && (env.useSkybox !== true || !env.skybox)) {
+    // Inactive legacy face paths may be retained for historical compatibility,
+    // but enabling Skybox again must use a currently registered choice.
+    // Active legacy skyboxes are still allowed to render unchanged.
     const selected = getSelectedDetectedSkyboxSet() ?? getSkyboxChoicesForEditor()[0];
     if (selected?.skybox) selectedSkybox = structuredClone(selected.skybox);
     else {
@@ -7607,6 +7657,7 @@ const changeSkyMode = async (useSkybox) => {
   env.useSkybox = useSkybox;
   finishSettingsEdit(edit);
   syncSkyModeControls();
+  if (useSkybox) skyboxEditorStatus.textContent = '';
   await applyCurrentEnvironment();
   refreshSlideSettingsInspector();
 };
@@ -7622,7 +7673,9 @@ const syncSlideEnvironmentEditor = () => {
     slideEnvironmentOverrideEnabled.disabled = !current;
     slideEnvironmentOverrideEnabled.checked = Boolean(current && (current.environmentOverride?.__enabled === true || (current.environmentOverride?.__enabled !== false && Object.keys(current.environmentOverride ?? {}).some(k => k !== "__enabled"))));
   }
-  if (sharedEnvironmentEditor) sharedEnvironmentEditor.hidden = inSlides && !slideEnvironmentOverrideEnabled?.checked;
+  const customDetails = document.getElementById('slideEnvironmentCustomDetails');
+  if (customDetails) { customDetails.hidden = false; customDetails.disabled = inSlides && !slideEnvironmentOverrideEnabled?.checked; }
+  if (sharedEnvironmentEditor) sharedEnvironmentEditor.hidden = false;
   refreshEnvironmentEditTargetUi();
   syncEnvironmentUi(getEnvironmentForEditorDisplay());
   syncSkyboxEditorFromEnvironment();
@@ -7657,6 +7710,7 @@ slideEnvironmentOverrideEnabled?.addEventListener('change', async () => {
     slide.environmentOverride.__enabled = false;
   }
   finishSettingsEdit(edit);
+  refreshMultiSlideActionButtons();
   syncSlideEnvironmentEditor();
   await applyCurrentEnvironment();
   refreshSlideSettingsInspector();
@@ -7721,13 +7775,18 @@ const listSkyboxImageFiles = async function () {
 
 // Scene and Slide share one editor. Selectors contain registered library
 // entries, with a temporary legacy choice for an active unregistered skybox.
-const getSkyboxChoicesForEditor = () => skyboxEditorChoices(
-  currentProjectData?.skyboxLibrary, getEnvironmentForEditorDisplay()?.skybox,
-);
+const getSkyboxChoicesForEditor = () => {
+  const environment = getEnvironmentForEditorDisplay();
+  // Preserve *active* historical assignments, but do not offer an old,
+  // inactive, unregistered skybox as a selectable library entry.
+  const activeFaces = environment?.useSkybox === true ? environment.skybox : null;
+  return skyboxEditorChoices(currentProjectData?.skyboxLibrary, activeFaces);
+};
 
 const refreshSkyboxEditorChoices = () => {
   if (!skyboxSetSelector) return;
-  const activeFaces = getEnvironmentForEditorDisplay()?.skybox;
+  const environment = getEnvironmentForEditorDisplay();
+  const activeFaces = environment?.useSkybox === true ? environment.skybox : null;
   const choices = getSkyboxChoicesForEditor();
   const selected = skyboxEditorSelectedValue(choices, activeFaces) || choices[0]?.value || '';
   const fragment = document.createDocumentFragment();
@@ -7744,6 +7803,11 @@ const refreshSkyboxEditorChoices = () => {
     fragment.appendChild(option);
   }
   skyboxSetSelector.replaceChildren(fragment);
+  // A previous "No registered skyboxes" hint must not survive registration.
+  // The picker options are refreshed independently of its status text.
+  if (choices.length && skyboxEditorStatus.textContent === t('No registered skyboxes')) {
+    skyboxEditorStatus.textContent = '';
+  }
   skyboxSetSelector.disabled = !choices.length;
   skyboxSetSelector.value = selected;
   refreshSelectedSkyboxSetInfo();
@@ -8168,6 +8232,24 @@ const slideImageFileExists = async function (imagePath) {
   }
 };
 
+// Look for case-insensitive Slide image names, obeying the user-defined
+// filename priority BEFORE image extension priority (PNG before JPG).
+const resolveSlideImagePathFromId = async function (imageId, directoryHandle = currentProjectDirectoryHandle) {
+  if (!directoryHandle) return null;
+  let folder;
+  try { folder = await directoryHandle.getDirectoryHandle('slides'); }
+  catch (error) { if (error?.name === 'NotFoundError') return null; throw error; }
+  const available = new Map();
+  for await (const [name, entry] of folder.entries()) {
+    if (entry.kind === 'file') available.set(name.toLowerCase(), name);
+  }
+  for (const name of slideImageNameCandidates(imageId)) {
+    const actual = available.get(name.toLowerCase());
+    if (actual) return `slides/${actual}`;
+  }
+  return null;
+};
+
 const createSlideImageUrl = async function (imagePath) {
   const normalizedPath = normalizeSlideImagePath(imagePath);
 
@@ -8269,7 +8351,7 @@ const changeSlideImage = async function (slideState, imagePath) {
   const normalizedPath = normalizeSlideImagePath(imagePath);
 
   if (!normalizedPath) {
-    return false;
+    return await applySlideImageHistoryState({ slideId: slideState.id }, null);
   }
 
   // =====================================
@@ -8304,14 +8386,22 @@ const changeSlideImage = async function (slideState, imagePath) {
   }
 
   if (!exists) {
-    console.warn("Slide image not found:", normalizedPath);
-
-    showAppNotice(`Slide image not found: "${normalizedPath}"`, {
-      level: "warning",
-      key: `change-slide-image:${normalizedPath}`,
+    // Keep the image ID even before the corresponding file has been added.
+    // A missing image uses the red fallback and is still a valid history state.
+    const material = slideState.mesh?.material;
+    if (!material) return false;
+    const oldTexture = material.diffuseTexture ?? null;
+    const oldImageUrl = slideState.activeImageUrl ?? null;
+    applySlideImageMaterialState(slideState, material, targetScene, {
+      imagePath: normalizedPath, imageUrl: null,
     });
-
-    return false;
+    slideState.imagePath = normalizedPath;
+    if (oldTexture) oldTexture.dispose();
+    if (oldImageUrl) releaseSlideImageUrlIfUnused(oldImageUrl, { excludeSlideState: slideState });
+    showAppNotice(`${t('No matching slide image for ID')}: ${extractImageIdFromSlideImagePath(normalizedPath) ?? normalizedPath}`, {
+      level: 'warning', key: `change-slide-image:${normalizedPath}`, 
+    });
+    return true;
   }
 
   // =====================================
@@ -8543,6 +8633,18 @@ const applySlideImageHistoryState = async function (historyItem, imagePath) {
   // =====================================
 
   return await changeSlideImage(slideState, normalizedPath);
+};
+
+// Improve-1B: one history item for selected slides; restores null as well as missing IDs.
+const applySlideImageBatchHistoryState = async function (historyItem, phase) {
+  let success = true;
+  for (const item of historyItem.changes ?? []) {
+    const result = await applySlideImageHistoryState(
+      { slideId: item.slideId }, phase === 'before' ? item.beforeImagePath : item.afterImagePath,
+    );
+    if (!result) success = false;
+  }
+  return success;
 };
 
 const resolveScenePreset = function (projectData, slideState) {
@@ -8885,13 +8987,13 @@ const applySlideFallbackMaterial = function (material, type = "unassigned") {
 
   if (type === "transparent") {
     // 意図的な透明スライド：編集時は青緑系で識別
-    material.diffuseColor = new Color3(0.18, 0.65, 0.72);
+    material.diffuseColor = new Color3(0.18, 0.48, 0.9);
   } else if (type === "missing") {
     // 画像指定あり・読み込み失敗
     material.diffuseColor = new Color3(0.7, 0.25, 0.25);
   } else {
     // 画像未設定
-    material.diffuseColor = new Color3(0.5, 0.5, 0.5);
+    material.diffuseColor = new Color3(1, 1, 1);
   }
 };
 
@@ -8964,7 +9066,7 @@ const createSlideMeshes = async function (
     // Image
     // =========================
 
-    const imagePath = normalizeSlideImagePath(slideState.imagePath);
+    let imagePath = normalizeSlideImagePath(slideState.imagePath);
 
     let imageUrl = null;
 
@@ -8974,6 +9076,18 @@ const createSlideMeshes = async function (
         imagePath,
         objectUrls,
       );
+      // An image ID may have been reserved before its file was created.
+      // When reopening, resolve all supported names by the normal priority.
+      if (!imageUrl) {
+        const imageId = extractImageIdFromSlideImagePath(imagePath);
+        if (imageId !== null) {
+          const found = await resolveSlideImagePathFromId(imageId, directoryHandle);
+          if (found) {
+            imageUrl = await tryCreateProjectFileUrl(directoryHandle, found, objectUrls);
+            if (imageUrl) imagePath = found;
+          }
+        }
+      }
     } else {
       console.warn("Slide imagePath is empty:", {
         id: slideState.id,
@@ -9467,16 +9581,6 @@ const recordSlideImageHistory = function (
 
   const after = normalizeSlideImagePath(afterImagePath);
 
-  if (!after) {
-    console.warn("Invalid slide-image history:", {
-      slideId: slideState.id,
-      before,
-      after,
-      imagePath: slideState.imagePath,
-    });
-
-    return;
-  }
 
   if (before === after) {
     return;
@@ -11520,7 +11624,8 @@ const refreshMultiSlideActionButtons = function () {
   // =====================================
 
   multiClearEnvironmentOverridesButton.disabled =
-    !inspectorTargetsHaveEnvironmentOverrides();
+    !inspectorTargetsHaveEnvironmentOverrides() &&
+    !Object.keys(getCurrentSlideState()?.environmentOverride ?? {}).length;
 };
 
 const refreshSlideInspectorTitle = function (
@@ -14768,7 +14873,7 @@ function renderPresentationQuickColors() {
 
 const WIDTH_PRESET_KEY = 'slidespace.drawing.widthPresets.v1';
 function applyDrawingWidthPresets(values) {
-  const defaults=[3,9,15];
+  const defaults=[2,5,10];
   const parsed=values.map((value,i)=>Math.round(Number(value)||defaults[i]));
   parsed[0]=Math.max(1,Math.min(12,parsed[0]));
   parsed[1]=Math.max(parsed[0]+1,Math.min(24,parsed[1]));
@@ -14786,9 +14891,22 @@ function applyDrawingWidthPresets(values) {
   try{localStorage.setItem(WIDTH_PRESET_KEY,JSON.stringify(parsed));}catch{}
 }
 const widthPresetInputs=[0,1,2].map(i=>document.getElementById('drawingWidthPreset'+i));
+document.getElementById('drawingWidthPresetReset')?.addEventListener('click', () => {applyDrawingWidthPresets([2,5,10]);void uiSound.play();});
 widthPresetInputs.forEach(el=>el?.addEventListener('change',()=>{applyDrawingWidthPresets(widthPresetInputs.map(input=>input?.value));void uiSound.play();}));
-try{const raw=JSON.parse(localStorage.getItem(WIDTH_PRESET_KEY)||'null');applyDrawingWidthPresets(Array.isArray(raw)&&raw.length===3?raw:[3,9,15]);}catch{applyDrawingWidthPresets([3,9,15]);}
+try{const raw=JSON.parse(localStorage.getItem(WIDTH_PRESET_KEY)||'null');applyDrawingWidthPresets(Array.isArray(raw)&&raw.length===3?raw:[2,5,10]);}catch{applyDrawingWidthPresets([2,5,10]);}
 
+const neonGlowValue = document.getElementById('slideNeonGlowStrengthValue');
+const syncNeonGlowLabel = () => { if (neonGlowValue) neonGlowValue.textContent = slideNeonGlowStrength.value; };
+slideNeonGlowStrength?.addEventListener('input', syncNeonGlowLabel);
+syncNeonGlowLabel();
+document.getElementById('drawingNeonReset')?.addEventListener('click', () => {
+  slideNeonGlowStrength.value = '1';
+  fadeTimeInput.value = '3';
+  syncNeonGlowLabel();
+  slideNeonGlowStrength.dispatchEvent(new Event('input', {bubbles:true}));
+  fadeTimeInput.dispatchEvent(new Event('change', {bubbles:true}));
+  void uiSound.play();
+});
 renderPresentationQuickColors();
 colorOptions.forEach(el => el.addEventListener("click", renderPresentationQuickColors));
 // Keep palette swatches in sync when Editor changes their underlying colors.
@@ -19152,7 +19270,9 @@ const applyCurrentEnvironment = async function () {
     return;
   }
 
-  syncEnvironmentUi(environment);
+  // Sync from the *editor target*, not from the effective rendered Slide
+  // environment. They differ whenever the Slide overrides the Scene preset.
+  syncEnvironmentUi(getEnvironmentForEditorDisplay());
 };
 
 const loadSkybox = async function (
@@ -21026,7 +21146,91 @@ const setPointerEvents = function (targetScene) {
 };
 
 // キーボードイベントの設定をする
+// Improve-1C: shortcut help, built from verified key handlers.
+const shortcutHelpDialog = document.getElementById('shortcutHelpDialog');
+const shortcutHelpSearch = document.getElementById('shortcutHelpSearch');
+const shortcutHelpItems = document.getElementById('shortcutHelpItems');
+const shortcutHelpRows = [
+  ['Edit','Create blank slide','G'],
+  ['Edit','Start presentation','P'],
+  ['Edit','Cycle selection gizmo','M'],
+  ['Edit','Eraser','N'],
+  ['Edit','Save screenshot','Y'],
+  ['Edit','Move Current in front of camera','R'],
+  ['Edit','Toggle fullscreen','T'],
+  ['Edit','Undo','Ctrl+Z'],
+  ['Edit','Redo','Ctrl+Y'],
+  ['Edit','Move selected slides left','Alt+←'],
+  ['Edit','Move selected slides right','Alt+→'],
+  ['Edit','Move selected slides to start','Alt+Home'],
+  ['Edit','Move selected slides to end','Alt+End'],
+  ['Edit','Cancel or clear selection','Esc'],
+  ['Presentation','Next slide','→ / Space / Enter / C'],
+  ['Presentation','Previous slide','← / PageUp / Z'],
+  ['Presentation','Neon pen','B'],
+  ['Presentation','Standard pen','V'],
+  ['Presentation','Current slide','X'],
+  ['Presentation','First slide','H'],
+  ['Presentation','Eraser','N'],
+  ['Presentation','Save screenshot','Y'],
+  ['Presentation','Camera control','F'],
+  ['Presentation','Move camera','W / A / S / D / Q / E'],
+  ['Presentation','Rotate camera','I / J / K / L / U / O'],
+  ['Presentation','Exit presentation or close overlay','Esc'],
+];
+const shortcutHelpNames = {
+  'Edit':'編集', 'Presentation':'プレゼン', 'Create blank slide':'スライドを新規作成',
+  'Start presentation':'発表を開始', 'Cycle selection gizmo':'ギズモ切替', 'Eraser':'消しゴム', 'Current slide':'現在のスライド', 'First slide':'最初のスライド', 'Move Current in front of camera':'Currentをカメラ前に移動',
+  'Save screenshot':'スクリーンショット保存', 'Toggle fullscreen':'全画面切替',
+  'Undo':'元に戻す', 'Redo':'やり直し',
+  'Move selected slides left':'選択スライドを左へ移動',
+  'Move selected slides right':'選択スライドを右へ移動',
+  'Move selected slides to start':'選択スライドを先頭へ',
+  'Move selected slides to end':'選択スライドを末尾へ',
+  'Cancel or clear selection':'キャンセル／選択解除',
+  'Previous slide':'前のスライド', 'Next slide':'次のスライド',
+  'Neon pen':'ネオンペン', 'Standard pen':'通常ペン', 'Camera control':'カメラ操作',
+  'Move camera':'カメラ移動', 'Rotate camera':'カメラ回転',
+  'Exit presentation or close overlay':'発表を終了／表示を閉じる',
+};
+function renderShortcutHelp() {
+  if (!shortcutHelpItems) return;
+  const ja = document.documentElement.lang !== 'en';
+  const term = shortcutHelpSearch?.value.trim().toLowerCase() ?? '';
+  shortcutHelpItems.replaceChildren();
+  for (const [group,name,key] of shortcutHelpRows) {
+    const local = ja ? shortcutHelpNames[name] ?? name : name;
+    if (!`${name} ${local} ${key} ${group} ${shortcutHelpNames[group] ?? ''}`.toLowerCase().includes(term)) continue;
+    const row = document.createElement('div'); row.className = 'shortcut-help-row';
+    const label = document.createElement('span'); label.textContent = `${ja ? shortcutHelpNames[group] ?? group : group} · ${local}`;
+    const kbd = document.createElement('kbd'); kbd.textContent = key;
+    row.append(label,kbd); shortcutHelpItems.append(row);
+  }
+}
+function openShortcutHelp() {
+  if (!shortcutHelpDialog || shortcutHelpDialog.open) return;
+  shortcutHelpSearch.value = '';
+  renderShortcutHelp(); shortcutHelpDialog.showModal(); shortcutHelpSearch.focus();
+}
+document.getElementById('toolbarShortcutHelp')?.addEventListener('click',openShortcutHelp);
+document.getElementById('shortcutHelpClose')?.addEventListener('click',()=>shortcutHelpDialog?.close());
+shortcutHelpSearch?.addEventListener('input',renderShortcutHelp);
+shortcutHelpDialog?.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation();});
+// Shortcuts remain discoverable on the existing action buttons.
+for (const [id,key] of [['addBlankSlideButton','G'],['presentButton','P'],['undoEditorButton','Ctrl+Z'],['redoEditorButton','Ctrl+Y'],['previousSlideButton','←'],['nextSlideButton','→'],['fullscreenButton','T'],['screenshotButton','Y'],['recordSlideButton','R'],['presentationToolEraser','N'],['scene2uSelectionGizmo','M'],['presentationCameraButton','F'],['presentationSlideDrawButton','V / B']]) {
+  const button=document.getElementById(id);
+  if (!button) continue;
+  button.dataset.shortcutKey=key;
+  const refresh=()=>{button.title=`${button.textContent.trim()} (${key})`;};
+  refresh();
+  document.addEventListener('slidespace:language-changed',refresh);
+  new MutationObserver(refresh).observe(button,{childList:true,characterData:true,subtree:true});
+}
 const keydownEvents = function (e) {
+  if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey &&
+      !isEditableElement(e.target) && !document.querySelector('dialog[open]')) {
+    e.preventDefault(); openShortcutHelp(); return;
+  }
   if (isEditableElement(e.target)) {
     return;
   }
@@ -21036,6 +21240,21 @@ const keydownEvents = function (e) {
     return;
   }
 
+  // Improve-1B: G creates a blank slide; ignore repeats and active dialogs.
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'g' && !e.repeat &&
+      !document.querySelector('dialog[open]')) {
+    e.preventDefault();
+    document.getElementById('addBlankSlideButton')?.click();
+    return;
+  }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'm' && !e.repeat && !document.querySelector('dialog[open]')) {
+    e.preventDefault();
+    const kind = scene2uChooseActiveKind();
+    const currentMode = kind === 'asset' ? assetGizmoMode : slideGizmoMode;
+    const next = ({position:'rotation',rotation:'scale',scale:'off',off:'position'})[currentMode] ?? 'position';
+    scene2uActivateGizmo(next,kind);
+    return;
+  }
   if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'p' && !e.repeat) {
     e.preventDefault();
     void enterPresentationMode();
@@ -21056,44 +21275,40 @@ const keydownEvents = function (e) {
   let posX, posY, posZ;
   let tgtX, tgtY, tgtZ;
   switch (e.key) {
-    case "m": // お絵描きのクリア
-    case "M":
-      clearDrawings();
-      break;
     case "n":
-    case "N": // スクリーンショットの保存
+    case "N": // Toggle eraser; switch from brush without ending drawing mode.
+      e.preventDefault();
+      if (drawingController.isActive() && currentSlideDrawingTool === "eraser") {
+        switchDrawing();
+      } else if (!drawingController.isActive()) {
+        drawingButton?.click();
+        queueMicrotask(() => setSlideDrawingTool("eraser"));
+      } else {
+        setSlideDrawingTool("eraser");
+      }
+      break;
+    case "y":
+    case "Y": // スクリーンショットの保存
       saveScreenshot();
       break;
-    case "v": // ネオンレイヤーへのお絵描きのトグル
-    case "V":
-      if (drawingController.isActive()) {
-        if (layerSwitch.checked) {
-          layerSwitch.checked = true;
-          switchDrawing();
-        } else {
-          layerSwitch.checked = true;
-          toggleActiveLayer();
-        }
-      } else {
-        layerSwitch.checked = true;
-        switchDrawing();
-      }
-      break;
-    case "b": // 通常レイヤーへのお絵描きのトグル
+    case "b": // Neon brush: same key toggles off, other tool switches in place.
     case "B":
-      if (drawingController.isActive()) {
-        if (!layerSwitch.checked) {
-          layerSwitch.checked = false;
-          switchDrawing();
-        } else {
-          layerSwitch.checked = false;
-          toggleActiveLayer();
-        }
-      } else {
-        layerSwitch.checked = false;
+    case "v": // Standard brush: same key toggles off, other tool switches in place.
+    case "V": {
+      e.preventDefault();
+      const neon = e.key.toLowerCase() === "b";
+      const sameActiveBrush = drawingController.isActive() &&
+        currentSlideDrawingTool === "brush" && layerSwitch.checked === neon;
+      if (sameActiveBrush) {
         switchDrawing();
+      } else {
+        layerSwitch.checked = neon;
+        setSlideDrawingTool("brush"); // N's eraser must not persist when switching to V/B.
+        toggleActiveLayer();
+        if (!drawingController.isActive()) switchDrawing();
       }
       break;
+    }
     case "d": // カメラの位置を+x
     case "D":
       const right = camera.getDirection(Vector3.Right());
@@ -21141,19 +21356,6 @@ const keydownEvents = function (e) {
       cameraCurrentPosition = camera.position.clone();
       cameraEndPointPosition = camera.position.clone();
       cameraControlViaKeyboard = false;
-      break;
-    case "g": // カメラのUpを(0,0,1)に
-    case "G":
-      posX = cameraPos.x;
-      posY = cameraPos.y;
-      posZ = cameraPos.z;
-      tgtX = posX + cameraForward.x;
-      tgtY = posY + cameraForward.y;
-      tgtZ = posZ + cameraForward.z;
-      cameraControlViaKeyboard = true;
-      cameraEndPointPosition = new Vector3(posX, posY, posZ);
-      cameraEndPointTarget = new Vector3(tgtX, tgtY, tgtZ);
-      cameraEndPointUpVector = Vector3.Up();
       break;
     case "j":
     case "J":
@@ -21602,20 +21804,44 @@ const handlePresentationKeydown = function (event) {
     case "v":
     case "V": {
       event.preventDefault();
-      const neon = event.key.toLowerCase() === "v";
-      if (presentationBrushStyle) {
-        presentationBrushStyle.value = neon ? "neon" : "standard";
-        presentationBrushStyle.dispatchEvent(new Event("change", { bubbles: true }));
+      const neon = event.key.toLowerCase() === "b";
+      const slideDrawingActive = drawingController.isActive() && drawingTargetSelect?.value === "slide";
+      const sameActiveBrush = slideDrawingActive && currentSlideDrawingTool === "brush" &&
+        layerSwitch.checked === neon;
+      if (sameActiveBrush) {
+        presentationSlideDrawButton?.click();
+      } else {
+        if (presentationBrushStyle) {
+          presentationBrushStyle.value = neon ? "neon" : "standard";
+          presentationBrushStyle.dispatchEvent(new Event("change", { bubbles: true }));
+        } else {
+          layerSwitch.checked = neon;
+          toggleActiveLayer();
+        }
+        setSlideDrawingTool("brush"); // Exit eraser when selecting V or B.
+        if (!slideDrawingActive) presentationSlideDrawButton?.click();
       }
-      setSlideDrawingTool("brush");
-      if (!drawingController.isActive() || drawingTargetSelect?.value !== "slide") presentationSlideDrawButton?.click();
       break;
     }
-    case "m":
-    case "M":
+    case "y":
+    case "Y":
       event.preventDefault();
-      if (drawingController.isActive()) clearDrawings();
+      saveScreenshot();
       break;
+    case "n":
+    case "N": {
+      event.preventDefault();
+      const slideDrawingActive = drawingController.isActive() && drawingTargetSelect?.value === "slide";
+      if (slideDrawingActive && currentSlideDrawingTool === "eraser") {
+        presentationSlideDrawButton?.click();
+      } else if (!slideDrawingActive) {
+        presentationSlideDrawButton?.click();
+        queueMicrotask(() => setSlideDrawingTool("eraser"));
+      } else {
+        setSlideDrawingTool("eraser");
+      }
+      break;
+    }
     // =====================================
     // Previous
     // =====================================
@@ -21910,7 +22136,9 @@ function refreshSlideAtmosphereEffectsUI() {
   const checkbox = document.getElementById('slideAtmosphereOverrideEnabled');
   if (checkbox) { checkbox.checked = slide?.atmosphereOverrideEnabled === true; checkbox.disabled = !slide || isPresentationMode(); }
   const details = document.getElementById('slideAtmosphereCustomDetails');
-  if (details) details.hidden = !slide?.atmosphereOverrideEnabled;
+  if (details) { details.hidden = false; details.disabled = !(slide?.atmosphereOverrideEnabled === true && !isPresentationMode()); }
+  const clearButton = document.getElementById('slideAtmosphereClearButton');
+  if (clearButton) clearButton.disabled = !slide || isPresentationMode() || !(slide.atmosphereOverrideEnabled || slide.atmosphereOverride);
   const settings = getCurrentSlideAtmosphereSettings();
   const editable = Boolean(slide?.atmosphereOverrideEnabled && !isPresentationMode());
   const presetSelect = document.getElementById('slideAtmospherePreset');
@@ -21963,6 +22191,17 @@ document.getElementById('slideAtmosphereOverrideEnabled')?.addEventListener('cha
   atmosphereEffectsController?.setSettings(getActiveSceneAtmosphereSettings());
   scheduleProjectStatusRefresh();
   void uiSound.play();
+});
+document.getElementById('slideAtmosphereClearButton')?.addEventListener('click', () => {
+  const slide = getCurrentSlideState();
+  if (!slide || isPresentationMode()) return;
+  const before = atmosphereHistorySnapshot('slide', slide.id);
+  slide.atmosphereOverrideEnabled = false;
+  slide.atmosphereOverride = null;
+  recordAtmosphereHistory('slide', slide.id, before);
+  refreshSlideAtmosphereEffectsUI();
+  atmosphereEffectsController?.setSettings(getActiveSceneAtmosphereSettings());
+  scheduleProjectStatusRefresh();
 });
 document.getElementById('slideAtmospherePreset')?.addEventListener('change', event => {
   if (updateSlideAtmosphereSettings(getAtmospherePresetSettings(event.currentTarget.value))) void uiSound.play();
@@ -22936,6 +23175,7 @@ const scene2vSyncControls = () => {
   scene2vSnapValue.disabled = mode === 'off';
   scene2vAnchor.disabled = scene2vPivot.value !== 'group';
 };
+document.addEventListener('slidespace:language-changed', scene2vSyncControls);
 scene2vPivot.addEventListener('change',()=>{
   // A mixed Selection has exactly one pivot preference, independently of
   // which adapter currently owns the visible gizmo.
@@ -24755,6 +24995,29 @@ for (const [control, field] of [[turbiditySlider, "turbidity"], [inclinationSlid
     },
   });
 }
+// Numeric Environment controls share Scene/Slide environment and history logic.
+for (const [field, slider] of [['turbidity',turbiditySlider],['inclination',inclinationSlider],['azimuth',azimuthSlider],['fogDensity',fogDensitySlider]]) {
+  const number = document.getElementById(`${field}Number`);
+  if (!number) continue;
+  const restore = () => { number.value = String(getEnvironmentForEditorDisplay()?.[field] ?? slider.value); };
+  number.addEventListener('change', () => {
+    if (!number.value.trim()) {restore();return;}
+    const value = Number(number.value);
+    if (!Number.isFinite(value) || value < Number(slider.min) || value > Number(slider.max)) {restore();return;}
+    const edit = beginSettingsEdit();
+    const environment = getEditableEnvironment();
+    if (!edit || !environment) {restore();return;}
+    environment[field] = value;
+    finishSettingsEdit(edit);
+    slider.value = String(value);
+    void applyCurrentEnvironment();
+    refreshSlideSettingsInspector();
+  });
+  number.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {event.preventDefault();number.blur();}
+    if (event.key === 'Escape') {event.preventDefault();event.stopPropagation();restore();number.blur();}
+  });
+}
 // Native color pickers commit once on change, instead of recording every preview.
 fogColorPicker.addEventListener("change", () => {
   const edit = beginSettingsEdit();
@@ -24827,45 +25090,25 @@ moveSlideLaterButton.addEventListener("click", () => executeSlideCommand("move-r
 
 applySlideImageIdButton.addEventListener("click", async () => {
   const slideState = getCurrentSlideState();
-
-  if (!slideState) {
-    return;
-  }
-
-  const imageId = Number(slideImageIdInput.value);
-
-  if (!Number.isInteger(imageId) || imageId < 0) {
-    console.warn("Invalid Image ID:", slideImageIdInput.value);
-
-    return;
-  }
-
-  const imagePath = createSlideImagePathFromId(imageId);
-
+  if (!slideState || projectOperationBusy || isPresentationMode()) return;
+  const raw = slideImageIdInput.value.trim();
+  const imageId = Number(raw);
+  if (raw && (!Number.isSafeInteger(imageId) || imageId < 0)) return;
   try {
-    const beforeImagePath = slideState.imagePath;
-
-    const changed = await changeSlideImage(slideState, imagePath);
-
-    if (!changed) {
-      // ファイル不存在などの警告はchangeSlideImage側で表示する。
-      // 古いリクエストの中断時には警告を出さない。
-      return;
+    const imagePath = raw ? ((await resolveSlideImagePathFromId(imageId)) ?? `slides/Slide${imageId}.png`) : null;
+    const before = slideState.imagePath;
+    if (normalizeSlideImagePath(before) === normalizeSlideImagePath(imagePath) &&
+        (!imagePath || slideState.activeImageUrl)) return;
+    if (await changeSlideImage(slideState, imagePath)) {
+      recordSlideImageHistory(slideState, before, imagePath);
+      refreshCurrentSlidePropertiesUi();
+      renderSlideThumbnails();
+      renderTable();
+      scheduleProjectStatusRefresh();
     }
-
-    recordSlideImageHistory(slideState, beforeImagePath, imagePath);
-
-    // =====================================
-    // UI更新
-    // =====================================
-
-    refreshCurrentSlidePropertiesUi();
-
-    renderSlideThumbnails();
-
-    renderTable();
   } catch (error) {
-    console.error("Slide image change failed:", error);
+    console.error('Slide image assignment failed:', error);
+    showAppNotice(t('Slide image import failed'), {level:'error'});
   }
 });
 
@@ -24935,6 +25178,52 @@ slideImageFileInput?.addEventListener('change', async () => {
     chooseSlideImageButton.disabled = !getCurrentSlideState();
     slideImageFileInput.value = '';
   }
+});
+
+// Assign consecutive IDs to selected slides, in presentation order.
+// Missing files still produce an image reference, and the entire operation
+// is a single Undo / Redo item (including restoring unassigned images).
+document.getElementById('applySequentialSlideImageIds')?.addEventListener('click', async () => {
+  if (!currentProjectData || projectOperationBusy || isPresentationMode()) return;
+  const field = document.getElementById('slideImageIdStart');
+  const first = Number(field?.value);
+  if (!Number.isSafeInteger(first) || first < 0) return;
+  const ordered = slideStates.filter(slide => selectedSlideIds.has(slide.id));
+  if (!ordered.length) {
+    showAppNotice(t('Select slides first'), {level:'warning'});
+    return;
+  }
+  const button = document.getElementById('applySequentialSlideImageIds');
+  const project = currentProjectData;
+  button.disabled = true;
+  const changes = [];
+  let missingCount = 0;
+  try {
+    for (let i = 0; i < ordered.length; i++) {
+      if (project !== currentProjectData) break;
+      const slide = ordered[i];
+      const number = first + i;
+      const match = await resolveSlideImagePathFromId(number);
+      const path = match ?? `slides/Slide${number}.png`;
+      if (!match) missingCount++;
+      const previous = normalizeSlideImagePath(slide.imagePath);
+      if (previous === path) continue;
+      if (await changeSlideImage(slide, path)) {
+        changes.push({slideId: slide.id, beforeImagePath: previous, afterImagePath: path});
+      }
+    }
+    if (changes.length && project === currentProjectData) {
+      pushEditorHistory({type:'slide-image-batch', changes});
+    }
+    refreshCurrentSlidePropertiesUi();
+    renderSlideThumbnails();
+    renderTable();
+    scheduleProjectStatusRefresh();
+    showAppNotice(`${t('Images assigned')}: ${changes.length} / ${ordered.length} (${t('Images not found')}: ${missingCount})`);
+  } catch (error) {
+    console.error('Sequential image assignment failed', error);
+    showAppNotice(t('Slide image import failed'), {level:'error'});
+  } finally { button.disabled = false; }
 });
 
 slideImageIdInput.addEventListener("keydown", (event) => {
@@ -25044,7 +25333,19 @@ multiFogColorInput.addEventListener("change", async () => {
 });
 
 multiClearEnvironmentOverridesButton.addEventListener("click", async () => {
-  await clearEnvironmentOverridesFromInspectorTargets();
+  const changed = await clearEnvironmentOverridesFromInspectorTargets();
+  if (!changed) {
+    const slide = getCurrentSlideState();
+    if (slide && Object.keys(slide.environmentOverride ?? {}).length > 0) {
+      const edit = beginSettingsEdit();
+      slide.environmentOverride = {};
+      finishSettingsEdit(edit);
+      await applyCurrentEnvironment();
+      refreshSlideSettingsInspector();
+      syncSlideEnvironmentEditor();
+    }
+  }
+  refreshMultiSlideActionButtons();
 });
 
 

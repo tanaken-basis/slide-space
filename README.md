@@ -15,7 +15,7 @@ SlideSpace is a browser-based spatial presentation editor. It combines 3D slides
 ## Run locally
 
 ```bash
-npm ci
+npm i
 npm run dev
 ```
 

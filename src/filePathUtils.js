@@ -26,16 +26,25 @@ export const createSlideImagePathFromId = function (imageId) {
   return `slides/slide(${imageId}).png`;
 };
 
+// Priority: Slide1 > Slide(1) > スライド1 > スライド(1);
+// within each name prefer PNG to JPG/JPEG.
+export const slideImageNameCandidates = function (id) {
+  if (!Number.isSafeInteger(Number(id)) || Number(id) < 0) return [];
+  const n = String(id);
+  return [`Slide${n}`, `Slide(${n})`, `スライド${n}`, `スライド(${n})`]
+    .flatMap(name => [`${name}.png`, `${name}.jpg`, `${name}.jpeg`]);
+};
+
 export const extractImageIdFromSlideImagePath = function (imagePath) {
   const filename = extractFilenameFromPath(imagePath);
 
-  const match = filename.match(/^slide\((\d+)\)\.png$/i);
+  const match = filename.match(/^(?:slide|スライド)(?:([0-9]+)|\(([0-9]+)\))\.(?:png|jpe?g)$/i);
 
   if (!match) {
     return null;
   }
 
-  return Number(match[1]);
+  return Number(match[1] ?? match[2]);
 };
 
 export const normalizeSlideImagePath = function (path) {

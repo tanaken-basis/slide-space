@@ -1,4 +1,21 @@
 export const UI_MESSAGES = {
+  "Keyboard shortcuts": {"ja":"キーボードショートカット","en":"Keyboard shortcuts"},
+  "Search shortcuts": {"ja":"ショートカットを検索","en":"Search shortcuts"},
+  "Slide insertion details": {"ja":"スライド追加の詳細設定","en":"Slide insertion details"},
+  "Slide offset help": {"ja":"カメラ基準のX（右）・Y（上）・Z（前）方向に、新規スライドと対応カメラ位置をずらします。","en":"Offset the new slide and its associated camera along camera-local X (right), Y (up), Z (forward)."},
+  "Move camera to added slide": {"ja":"追加したスライドへ視点を移動","en":"Move camera to added slide"},
+  "Reset width presets": {"ja":"線幅を初期化","en":"Reset width presets"},
+  "Neon detailed settings": {"ja":"ネオンの詳細設定","en":"Neon detailed settings"},
+  "Reset neon settings": {"ja":"ネオン設定を初期化","en":"Reset neon settings"},
+  "Sequential image IDs": {"ja":"画像IDを連番で設定", "en":"Sequential image IDs"},
+  "Starting image ID": {"ja":"開始画像ID", "en":"Starting image ID"},
+  "Apply IDs in slide order": {"ja":"選択したスライドに連番割当", "en":"Assign sequentially to selected slides"},
+  "Assign sequential IDs to selected slides": {"ja":"選択したスライドに連番割当", "en":"Assign sequential IDs to selected slides"},
+  "No matching slide image for ID": {"ja":"画像IDに対応するファイルがありません", "en":"No matching image for ID"},
+  "Images assigned": {"ja":"画像割当数", "en":"Images assigned"},
+  "Images not found": {"ja":"未検出", "en":"Not found"},
+  "Attached text (temporary edit)": {"ja":"添付テキスト（一時編集・保存なし）", "en":"Attached text (temporary edit, not saved)"},
+  "Selection controls combined help": {"ja":"選択中のオブジェクトを変形します。操作基準は変形の中心を決めます。選択を解除してもCurrentは維持されます。Ctrl+クリックで選択を切り替え、Alt+クリックでCurrentのみ変更します。", "en":"Transform edits selected objects. Active Object sets the pivot. Clearing selection keeps Current. Ctrl-click toggles selection; Alt-click changes Current only."},
   "Atmosphere Override": {"ja":"空気感エフェクトの上書き", "en":"Atmosphere Effect Override"},
   "Atmosphere Rising Bands": {"ja":"上昇する光帯", "en":"Rising Bands"},
   "Atmosphere Rising Bands Mix": {"ja":"上昇する光帯（粒子ミックス）", "en":"Rising Bands (Mixed)"},
@@ -61,7 +78,7 @@ export const UI_MESSAGES = {
   "No registered skyboxes": {"ja":"登録済みSkyboxがありません", "en":"No registered skyboxes"},
   "Missing skybox images": {"ja":"不足画像", "en":"Missing images"},
   "Skyboxes with missing images": {"ja":"画像不足のSkybox", "en":"skyboxes with missing images"},
-  "Current unregistered skybox": {"ja":"現在の未登録Skybox（旧形式）", "en":"Current unregistered skybox (legacy)"},
+  "Current unregistered skybox": {"ja":"現在の未登録Skybox", "en":"Current unregistered skybox"},
   "Skybox applied": {"ja":"を適用しました", "en":"applied"},
   "Skybox Library": {"ja": "スカイボックスライブラリ", "en": "Skybox Library"},
   "Skybox Library description": {"ja": "skybox/ の6面画像セットを登録して管理します。登録してもSceneやSlideの表示は変更されません。", "en": "Register six-face image sets from skybox/. Registration does not change an active Scene or Slide skybox."},
@@ -232,6 +249,9 @@ export const UI_MESSAGES = {
   "Additional Slide Gizmo and camera controls": {"ja":"詳細：従来のSlide Gizmo・カメラ配置設定", "en":"Advanced: legacy Slide Gizmo and camera placement"},
   "Additional Asset Gizmo controls": {"ja":"詳細：従来のAsset Gizmo設定", "en":"Advanced: legacy Asset Gizmo controls"},
   "Go to Selection Gizmo": {"ja":"Selection Gizmoへ移動", "en":"Go to Selection Gizmo"},
+  "Clear Atmosphere Override": {"ja":"空気感エフェクトの上書きを解除","en":"Clear Atmosphere Override"},
+  "Clear BGM Override": {"ja":"BGMの上書きを解除","en":"Clear BGM Override"},
+  "Clear AutoPlay Override": {"ja":"自動再生の上書きを解除","en":"Clear AutoPlay Override"},
   "No snap": {"ja":"スナップなし", "en":"No snap"},
   "Rotation delta XYZ (degrees)": {"ja":"回転量 XYZ（度）", "en":"Rotation delta XYZ (degrees)"},
   "Scale factors XYZ": {"ja":"スケール倍率 XYZ", "en":"Scale factors XYZ"},
@@ -380,7 +400,7 @@ export const UI_MESSAGES = {
   "Mixed sky mode explanation": {"ja":"Mixedは選択中のスライドで空の表示方式が異なることを示します。","en":"Mixed indicates different sky modes among selected slides."},
   "Use Slide Environment Override": {"ja":"スライド固有の環境設定を使用","en":"Use Slide Environment Override"},
   "Environment override note": {"ja":"OFF: Sceneの環境を継承。ON: スライド固有の環境設定を使用します。","en":"Off: inherit Scene environment. On: use slide-specific environment settings."},
-  "Procedural Sky settings": {"ja":"Procedural Skyの設定","en":"Procedural Sky settings"},
+  "Procedural Sky settings": {"ja":"プロシージャルスカイの設定","en":"Procedural Sky settings"},
   "Fog": {"ja":"霧（Fog）","en":"Fog"},
   "Skybox settings": {"ja":"Skyboxの設定","en":"Skybox settings"},
 
@@ -1583,8 +1603,12 @@ export const UI_MESSAGES = {
     "en": "Fog color"
   },
   "移動単位:": {
-    "ja": "移動単位:",
-    "en": "Movement step:"
+    "ja": "移動単位",
+    "en": "Movement step"
+  },
+  "移動単位": {
+    "ja": "移動単位",
+    "en": "Movement step"
   },
   "表示言語": {
     "ja": "表示言語",

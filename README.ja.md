@@ -15,7 +15,7 @@ SlideSpaceは、3D空間にスライドやモデルを配置できるブラウ�
 ## 起動方法
 
 ```bash
-npm ci
+npm i
 npm run dev
 ```
 

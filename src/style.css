@@ -175,8 +175,9 @@ details.inspector-section[open] > summary { border-bottom: 1px solid var(--ui-bo
 .multi-transform-subtitle { margin: 18px 0 8px; padding-top: 12px; border-top: 1px solid var(--ui-border-soft); font-size: 12px; font-weight: 600; }
 .multi-transform-camera-current { display: flex; justify-content: space-between; font-size: 11px; color: var(--ui-text-muted); }
 .multi-transform-camera-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-.bgm-volume-editor { display: grid; grid-template-columns: minmax(50px,.6fr) minmax(0,1fr); gap: 8px; align-items: center; }
-#slideBgmVolumeSlider { grid-column: 2; }
+.bgm-volume-editor { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 8px; align-items: center; width: 100%; min-width: 0; }
+.bgm-volume-editor input[type="range"] { grid-column: 1; min-width: 0; width: 100%; }
+.bgm-volume-editor input[type="number"] { grid-column: 2; width: 100%; min-width: 0; box-sizing: border-box; }
 .multi-slider-row { display: flex; align-items: center; gap: 6px; margin: 4px 0 12px; }
 .multi-slider-row label { font-size: 10px; }
 .transition-speed-slider-row { padding-left: calc(40% + 6px); }
@@ -2316,3 +2317,59 @@ html[lang="en"] .slide-thumbnail-item.current::after { content:'CURRENT'; }
 
 .atmosphere-particles-columns { display: grid; grid-template-columns: 4.4rem 2.8rem minmax(5rem,1fr) 4.3rem; gap: .35rem; font-size: .72rem; opacity: .7; }
 .atmosphere-particles-columns span { min-width: 0; }
+
+/* Temporary presentation text can be edited without writing to project data. */
+#slideAttachedTextViewerInput { resize: vertical; }
+
+/* Improve-1B: editable presentation notes preserve newlines through textarea.value. */
+#slideAttachedTextViewerContent { display:block; width:100%; min-height:200px; max-height:60vh; padding:10px; resize:vertical; white-space:pre-wrap; overflow:auto; font:inherit; color:var(--ui-input-text); background:var(--ui-input-bg); border:1px solid var(--ui-input-border); border-radius:var(--ui-radius-sm); }
+
+/* Improve-1B: Present + divider now sit directly to the left of slide navigation. */
+.ui1a-toolbar .ui1a-presentation-tools { border-right: 1px solid var(--ui-border); padding-right: 10px; margin-right: 2px; }
+.ui1a-toolbar .toolbar-slide-controls { border-right: 0; padding-right: 0; }
+
+/* Improve-1C */
+.shortcut-help-dialog { color:var(--ui-text,inherit); background:var(--ui-surface,#fff); border:1px solid var(--ui-border,#8885); border-radius:12px; width:min(520px,92vw); max-height:80vh; padding:20px; }
+.shortcut-help-dialog::backdrop {background:rgba(0,0,0,.48)}
+.shortcut-help-header {display:flex;justify-content:space-between;align-items:center;gap:12px}
+.shortcut-help-header h2 {margin:0;font-size:1.15rem}
+#shortcutHelpSearch {width:100%;margin:8px 0 14px}
+.shortcut-help-items {max-height:50vh;overflow-y:auto}
+.shortcut-help-row {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--ui-border,#8883)}
+.shortcut-help-row kbd {white-space:nowrap;padding:3px 8px;border:1px solid var(--ui-border,#8885);border-radius:4px;background:var(--ui-surface-alt,#8882)}
+.slide-insert-offsets {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.slide-insert-offsets input {width:100%;box-sizing:border-box}
+.slide-insert-camera-option {display:flex;align-items:center;gap:8px}
+.environment-number {display:inline-block;max-width:92px;margin-left:6px}
+.neon-glow-range {display:flex;align-items:center;gap:10px}
+.neon-glow-range input {flex:1;min-width:0}
+.neon-glow-range output {min-width:2.5em;text-align:right;font-variant-numeric:tabular-nums}
+
+/* Improve-1D: consistent theme-aware shortcut help. */
+.shortcut-help-dialog { background:var(--ui-surface-1);color:var(--ui-text);border-color:var(--ui-border);color-scheme:inherit; }
+.shortcut-help-dialog .slide-button {background:var(--ui-surface-2);color:var(--ui-text);border-color:var(--ui-border);}
+.shortcut-help-dialog label {color:var(--ui-text);}
+.shortcut-help-dialog #shortcutHelpSearch {background:var(--ui-input-bg);color:var(--ui-input-text);border:1px solid var(--ui-input-border);}
+.shortcut-help-row {color:var(--ui-text);border-color:var(--ui-border);}
+.shortcut-help-row kbd {background:var(--ui-surface-2);color:var(--ui-text);border-color:var(--ui-border);}
+.slide-override-fields {border:0;margin:8px 0;padding:8px 0;min-width:0;}
+.slide-override-fields legend {color:var(--ui-text);font-weight:600;padding:0 4px;}
+.slide-override-fields:disabled {opacity:.53;}
+.slide-override-fields:disabled input,.slide-override-fields:disabled select,.slide-override-fields:disabled button {cursor:not-allowed;}
+.slide-bulk-image-id-operation {margin-top:12px;padding-top:12px;border-top:1px solid var(--ui-border);}
+#proceduralSkySettings > div:has(> input.environment-number),.environment-fog-settings > div:has(> input.environment-number) {display:grid;grid-template-columns:minmax(0,1fr) 88px;align-items:center;gap:6px 10px;margin-bottom:8px;}
+#proceduralSkySettings > div:has(> input.environment-number) > label,.environment-fog-settings > div:has(> input.environment-number) > label {grid-column:1 / -1;}
+#proceduralSkySettings > div:has(> input.environment-number) > input[type=range],.environment-fog-settings > div:has(> input.environment-number) > input[type=range] {grid-column:1;min-width:0;width:100%;}
+#proceduralSkySettings > div:has(> input.environment-number) > input.environment-number,.environment-fog-settings > div:has(> input.environment-number) > input.environment-number {grid-column:2;max-width:none;width:100%;box-sizing:border-box;margin:0;}
+
+/* Match the link operation heading to the attached-text heading. */
+.slide-link-controls {border-top:0;margin-top:0;padding-top:0;}
+.slide-link-type-label {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+
+/* Improve-1H: match the Editor View card's header alignment with Camera Navigation. */
+#workspace-camera .scene-viewport-guides { padding: 0; border: 1px solid var(--ui-border); }
+#workspace-camera .scene-viewport-guides > .inspector-section-content { padding: 10px; }
+#workspace-camera .scene-viewport-guides > summary { margin: 0; }
+#workspace-camera .camera-primary-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#workspace-camera .camera-primary-actions > button { flex: 0 1 auto; }
+#workspace-camera .camera-speed-separator { margin: 10px 0; }

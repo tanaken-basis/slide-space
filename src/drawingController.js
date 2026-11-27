@@ -372,11 +372,11 @@ export const createDrawingController = function ({
     if (!isDrawingModeActive) return;
 
     // pointerイベントのボタンをチェック (左クリックまたはタッチ)
-    if (e.pointerType !== "mouse" && e.pointerType !== "touch") {
+    if (e.pointerType !== "mouse" && e.pointerType !== "touch" && e.pointerType !== "pen") {
       return;
     }
     // マウスイベントの場合、左ボタンのみを許可
-    if (e.pointerType === "mouse" && e.button !== 0) {
+    if ((e.pointerType === "mouse" || e.pointerType === "pen") && e.button !== 0) {
       return;
     }
 
